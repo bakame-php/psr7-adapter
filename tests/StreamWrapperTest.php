@@ -17,7 +17,7 @@ class StreamWrapperTest extends TestCase
     public function testLeagueCsvWriter()
     {
         $stream = new Stream(tmpfile());
-        $csv = \Bakame\Psr7\Csv\csv_from_stream(Writer::class, $stream);
+        $csv = \Bakame\Psr7\Csv\csv_create_from_stream(Writer::class, $stream);
         $this->assertSame("\n", $csv->getNewline());
         $csv->setNewline("\r\n");
         $csv->insertOne(['jane', 'doe']);

@@ -10,6 +10,7 @@
 * For the full copyright and license information, please view the LICENSE
 * file that was distributed with this source code.
 */
+
 namespace Bakame\Psr7\Csv;
 
 use InvalidArgumentException;
@@ -25,7 +26,7 @@ use Psr\Http\Message\StreamInterface;
  * @param  StreamInterface $stream
  * @return Reader|Writer
  */
-function csv_from_stream($class, StreamInterface $stream)
+function csv_create_from_stream($class, StreamInterface $stream)
 {
     static $connection = [Reader::class => 1, Writer::class => 1];
 

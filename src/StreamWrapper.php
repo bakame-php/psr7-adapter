@@ -10,6 +10,7 @@
 * For the full copyright and license information, please view the LICENSE
 * file that was distributed with this source code.
 */
+
 namespace Bakame\Psr7\Csv;
 
 use Psr\Http\Message\StreamInterface;
@@ -18,7 +19,7 @@ use Psr\Http\Message\StreamInterface;
  * StreamWrapper class to enable using a
  * PSR-7 StreamInterface with League\Csv connection object
  *
- * @internal used by csv_from_stream to wrap the StreamInterface object
+ * @internal used by csv_create_from_stream to wrap the StreamInterface object
  */
 final class StreamWrapper
 {

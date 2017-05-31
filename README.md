@@ -1,4 +1,4 @@
-Bakame PSR-7
+Bakame PSR-7 Csv Factory
 =====
 
 This package enables instantiating [League CSV object](http://csv.thephpleague.com) from [PSR-7 StreamInterface objects](http://www.php-fig.org/psr/psr-7/).
@@ -31,18 +31,18 @@ use League\Csv\Writer;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
 use Slim\App;
-use function Bakame\Psr7\csv_from_stream;
+use function Bakame\Psr7\Csv\csv_create_from_stream;
 
 $app = new App();
 $app->post('/csv-delimiter-converter', function (Request $request, Response $response): Response {
 
     //let's create a CSV Reader object from the submitted file
     $input_csv = $request->getUploadedFiles()['csv'];
-    $csv = csv_from_stream(Reader::class, $input_csv->getStream());
+    $csv = csv_create_from_stream(Reader::class, $input_csv->getStream());
     $csv->setDelimiter(';');
 
     //let's create a CSV Writer object from the response body
-    $output = csv_from_stream(Writer::class, $response->getBody());
+    $output = csv_create_from_stream(Writer::class, $response->getBody());
     //we convert the delimiter from ";" to "|"
     $output->setDelimiter('|')
     $output->insertAll($csv);
@@ -55,20 +55,22 @@ $app->post('/csv-delimiter-converter', function (Request $request, Response $res
         ->withHeader('Content-Disposition', 'filename=csv-'.date_create()->format('Ymdhis').'.csv')
     ;
 });
+
+$app->run();
 ```
 
-### csv_from_stream
+In both cases, the `StreamInterface` objects are never detached or removed from their parent objects (ie the `Request` object or the `Response` object), the CSV objects operate as adapters on the `StreamInterface` object to ease retrieving and/or sending CSV documents.
+
+
+### csv_create_from_stream
 
 ```php
 <?php
 
-use Psr\Http\Message\ServerRequest;
-use function Bakame\Psr7\csv_from_stream;
+use Psr\Http\Message\StreamInterface;
+use function Bakame\Psr7\Csv\csv_create_from_stream;
 
-function Bakame\Psr7\csv_from_stream(
-    string $class_fqn,
-    Psr\Http\Message\StreamInterface $stream
-): Reader|Writer
+function csv_create_from_stream(string $class_fqn, StreamInterface $stream): Reader|Writer
 ```
 
 returns a `League\Csv\Reader` or a `League\Csv\Writer` object from a PSR-7 `StreamInterface` object.  
