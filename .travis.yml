@@ -1,0 +1,27 @@
+language: php
+
+sudo: false
+
+matrix:
+  include:
+    - php: 7.0
+      env: VALIDATE_CODING_STYLE=false
+    - php: 7.1
+      env: VALIDATE_CODING_STYLE=true
+  fast_finish: true
+
+cache:
+  directories:
+    - $HOME/.composer/cache
+
+before_install:
+  - travis_retry composer self-update
+
+install:
+  - travis_retry composer update --no-interaction --prefer-source
+
+script:
+  - composer phpunit
+
+after_script:
+ - if [ "$VALIDATE_CODING_STYLE" == "true" ]; then composer phpcs fi
