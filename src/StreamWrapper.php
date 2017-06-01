@@ -13,17 +13,22 @@
 
 namespace Bakame\Psr7\Csv;
 
+use InvalidArgumentException;
 use Psr\Http\Message\StreamInterface;
 
 /**
  * StreamWrapper class to enable using a
  * PSR-7 StreamInterface with League\Csv connection object
  *
+ * This class is heavily based on the code found in Guzzle\Psr7 package
+ *
+ * @link https://github.com/guzzle/psr7/blob/master/src/StreamWrapper.php
+ *
  * @internal used by csv_create_from_stream to wrap the StreamInterface object
  */
 final class StreamWrapper
 {
-    const STREAM_WRAPPER_SCHEME = 'bakame+csv';
+    const PROTOCOL = 'bakame+csv';
 
     /**
      * the resource context
@@ -51,9 +56,34 @@ final class StreamWrapper
      */
     public static function register()
     {
-        if (!in_array(self::STREAM_WRAPPER_SCHEME, stream_get_wrappers())) {
-            stream_wrapper_register(self::STREAM_WRAPPER_SCHEME, __CLASS__);
+        if (!in_array(self::PROTOCOL, stream_get_wrappers())) {
+            stream_wrapper_register(self::PROTOCOL, __CLASS__);
         }
+    }
+
+    /**
+     * Return a stream resource from a StreamInterface object
+     *
+     * @param StreamInterface $stream
+     *
+     * @throws InvalidArgumentException if the stream is not readable and writable
+     *
+     * @return resource
+     */
+    public static function getResource(StreamInterface $stream)
+    {
+        if (!$stream->isReadable() && !$stream->isWritable()) {
+            throw new InvalidArgumentException('Argument passed must be a StreamInterface object readable, writable or both');
+        }
+
+        self::register();
+
+        return fopen(
+            self::PROTOCOL.'://stream',
+            $stream->isReadable() ? ($stream->isWritable() ? 'r+' : 'r') : 'w',
+            null,
+            stream_context_create([self::PROTOCOL => ['stream' => $stream]])
+        );
     }
 
     /**
@@ -63,12 +93,12 @@ final class StreamWrapper
     {
         $options = stream_context_get_options($this->context);
 
-        if (!isset($options[self::STREAM_WRAPPER_SCHEME]['stream'])) {
+        if (!isset($options[self::PROTOCOL]['stream'])) {
             return false;
         }
 
         $this->mode = $mode;
-        $this->stream = $options[self::STREAM_WRAPPER_SCHEME]['stream'];
+        $this->stream = $options[self::PROTOCOL]['stream'];
 
         return true;
     }
@@ -120,7 +150,7 @@ final class StreamWrapper
      */
     public function stream_stat()
     {
-        static $modeMap = [
+        static $mode_map = [
             'r'  => 33060,
             'r+' => 33206,
             'w'  => 33188,
@@ -129,7 +159,7 @@ final class StreamWrapper
         return [
             'dev'     => 0,
             'ino'     => 0,
-            'mode'    => $modeMap[$this->mode],
+            'mode'    => $mode_map[$this->mode],
             'nlink'   => 0,
             'uid'     => 0,
             'gid'     => 0,

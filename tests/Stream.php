@@ -1,22 +1,38 @@
 <?php
 
-namespace BakameTest\Psr7\Csv\Lib;
+namespace BakameTest\Psr7\Csv;
 
 use Psr\Http\Message\StreamInterface;
 use RuntimeException;
 
+/**
+ * StreamInterface implementation heavily based on Diactoros Stream class
+ *
+ * @link https://github.com/zendframework/zend-diactoros/blob/master/src/Stream.php
+ */
 class Stream implements StreamInterface
 {
+    /**
+     * Underlying stream resource
+     *
+     * @var resource
+     */
     protected $resource;
 
+    /**
+     * {@inheritdoc}
+     */
     public function __construct($resource)
     {
         $this->resource = $resource;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function __toString()
     {
-        if (! $this->isReadable()) {
+        if (!$this->isReadable()) {
             return '';
         }
 
@@ -28,9 +44,12 @@ class Stream implements StreamInterface
         }
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function close()
     {
-        if (! $this->resource) {
+        if (!$this->resource) {
             return;
         }
 
@@ -38,6 +57,9 @@ class Stream implements StreamInterface
         fclose($resource);
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function detach()
     {
         $resource = $this->resource;
@@ -45,6 +67,9 @@ class Stream implements StreamInterface
         return $resource;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function getSize()
     {
         if (null === $this->resource) {
@@ -55,9 +80,12 @@ class Stream implements StreamInterface
         return $stats['size'];
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function tell()
     {
-        if (! $this->resource) {
+        if (!$this->resource) {
             throw new RuntimeException('No resource available; cannot tell position');
         }
 
@@ -69,18 +97,24 @@ class Stream implements StreamInterface
         return $result;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function eof()
     {
-        if (! $this->resource) {
+        if (!$this->resource) {
             return true;
         }
 
         return feof($this->resource);
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function isSeekable()
     {
-        if (! $this->resource) {
+        if (!$this->resource) {
             return false;
         }
 
@@ -88,13 +122,16 @@ class Stream implements StreamInterface
         return $meta['seekable'];
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function seek($offset, $whence = SEEK_SET)
     {
-        if (! $this->resource) {
+        if (!$this->resource) {
             throw new RuntimeException('No resource available; cannot seek position');
         }
 
-        if (! $this->isSeekable()) {
+        if (!$this->isSeekable()) {
             throw new RuntimeException('Stream is not seekable');
         }
 
@@ -107,30 +144,39 @@ class Stream implements StreamInterface
         return true;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function rewind()
     {
         return $this->seek(0);
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function isWritable()
     {
-        if (! $this->resource) {
+        if (!$this->resource) {
             return false;
         }
 
         $meta = stream_get_meta_data($this->resource);
         $mode = $meta['mode'];
 
-        return strcspn('xwca+', $mode);
+        return strlen($mode) != strcspn('xwca+', $mode);
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function write($string)
     {
-        if (! $this->resource) {
+        if (!$this->resource) {
             throw new RuntimeException('No resource available; cannot write');
         }
 
-        if (! $this->isWritable()) {
+        if (!$this->isWritable()) {
             throw new RuntimeException('Stream is not writable');
         }
 
@@ -139,33 +185,38 @@ class Stream implements StreamInterface
         if (false === $result) {
             throw new RuntimeException('Error writing to stream');
         }
+
         return $result;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function isReadable()
     {
-        if (! $this->resource) {
+        if (!$this->resource) {
             return false;
         }
 
         $meta = stream_get_meta_data($this->resource);
-        $mode = $meta['mode'];
 
-        return !strcspn($mode, 'r+');
+        return 2 !== strcspn($meta['mode'], 'r+');
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function read($length)
     {
-        if (! $this->resource) {
+        if (!$this->resource) {
             throw new RuntimeException('No resource available; cannot read');
         }
 
-        if (! $this->isReadable()) {
+        if (!$this->isReadable()) {
             throw new RuntimeException('Stream is not readable');
         }
 
         $result = fread($this->resource, $length);
-
         if (false === $result) {
             throw new RuntimeException('Error reading stream');
         }
@@ -173,9 +224,12 @@ class Stream implements StreamInterface
         return $result;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function getContents()
     {
-        if (! $this->isReadable()) {
+        if (!$this->isReadable()) {
             throw new RuntimeException('Stream is not readable');
         }
 
@@ -186,6 +240,9 @@ class Stream implements StreamInterface
         return $result;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function getMetadata($key = null)
     {
         if (null === $key) {
@@ -193,7 +250,7 @@ class Stream implements StreamInterface
         }
 
         $metadata = stream_get_meta_data($this->resource);
-        if (! array_key_exists($key, $metadata)) {
+        if (!array_key_exists($key, $metadata)) {
             return null;
         }
 

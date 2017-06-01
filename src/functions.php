@@ -14,23 +14,24 @@
 namespace Bakame\Psr7\Csv;
 
 use InvalidArgumentException;
-use League\Csv\Reader;
-use League\Csv\Writer;
+use League\Csv\AbstractCsv;
 use Psr\Http\Message\StreamInterface;
 
 /**
  * returns a League\Csv\Reader or a League\Csv\Writer
  * from a StreamInterface object
  *
- * @param  string          $class  Fully Qualified name for League\Csv\Reader or League\Csv\Writer
- * @param  StreamInterface $stream
+ * @param string          $class  Fully Qualified name for League\Csv\Reader or League\Csv\Writer
+ * @param StreamInterface $stream
+ *
+ * @throws InvalidArgumentException if the class does not extends League\Csv\AbstractCsv
+ * @throws InvalidArgumentException if the stream is not seekable
+ *
  * @return Reader|Writer
  */
-function csv_create_from_stream($class, StreamInterface $stream)
+function csv_create_from_psr7($class, StreamInterface $stream)
 {
-    static $connection = [Reader::class => 1, Writer::class => 1];
-
-    if (!isset($connection[$class])) {
+    if (!is_subclass_of($class, AbstractCsv::class)) {
         throw new InvalidArgumentException(sprintf('The submitted connection type `%s` is unknown', $class));
     }
 
@@ -38,20 +39,5 @@ function csv_create_from_stream($class, StreamInterface $stream)
         throw new InvalidArgumentException('Argument passed must be a seekable StreamInterface object');
     }
 
-    if (!$stream->isReadable() && !$stream->isWritable()) {
-        throw new InvalidArgumentException('Argument passed must be a StreamInterface object readable, writable or both');
-    }
-
-    $mode = $stream->isReadable() ? ($stream->isWritable() ? 'r+' : 'r') : 'w';
-
-    StreamWrapper::register();
-
-    $stream = fopen(
-        StreamWrapper::STREAM_WRAPPER_SCHEME.'://stream',
-        $mode,
-        null,
-        stream_context_create([StreamWrapper::STREAM_WRAPPER_SCHEME => ['stream' => $stream]])
-    );
-
-    return call_user_func([$class, 'createFromStream'], $stream);
+    return call_user_func([$class, 'createFromStream'], StreamWrapper::getResource($stream));
 }
