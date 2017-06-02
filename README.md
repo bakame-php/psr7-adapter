@@ -31,7 +31,7 @@ use League\Csv\Writer;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
 use Slim\App;
-use function Bakame\Psr7\Csv\csv_create_from_psr7;
+use function Bakame\Psr7\Factory\csv_create_from_psr7;
 
 $app = new App();
 $app->post('/csv-delimiter-converter', function (Request $request, Response $response): Response {
@@ -68,7 +68,7 @@ In both cases, the `StreamInterface` objects are never detached or removed from 
 <?php
 
 use Psr\Http\Message\StreamInterface;
-use function Bakame\Psr7\Csv\csv_create_from_psr7;
+use function Bakame\Psr7\Factory\csv_create_from_psr7;
 
 function csv_create_from_psr7(string $class_fqn, StreamInterface $stream) mixed
 ```

@@ -22,12 +22,12 @@
     },
     "autoload": {
         "psr-4": {
-            "Bakame\\Psr7\\Csv\\": "src"
+            "Bakame\\Psr7\\Factory\\": "src"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "BakameTest\\Psr7\\Csv\\": "tests"
+            "BakameTest\\Psr7\\Factory\\": "tests"
         },
         "files": ["src/functions_include.php"]
     },

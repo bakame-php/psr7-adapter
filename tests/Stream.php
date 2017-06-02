@@ -1,6 +1,6 @@
 <?php
 
-namespace BakameTest\Psr7\Csv;
+namespace BakameTest\Psr7\Factory;
 
 use Psr\Http\Message\StreamInterface;
 use RuntimeException;

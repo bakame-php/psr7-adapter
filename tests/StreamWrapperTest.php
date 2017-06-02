@@ -1,8 +1,8 @@
 <?php
 
-namespace BakameTest\Psr7\Csv;
+namespace BakameTest\Psr7\Factory;
 
-use Bakame\Psr7\Csv\StreamWrapper;
+use Bakame\Psr7\Factory\StreamWrapper;
 use InvalidArgumentException;
 use League\Csv\Writer;
 use PHPUnit\Framework\Error\Warning;
@@ -10,14 +10,14 @@ use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\StreamInterface;
 
 /**
- * @coversDefaultClass Bakame\Psr7\Csv\StreamWrapper
+ * @coversDefaultClass Bakame\Psr7\Factory\StreamWrapper
  */
 class StreamWrapperTest extends TestCase
 {
     public function testLeagueCsvWriter()
     {
         $stream = new Stream(tmpfile());
-        $csv = \Bakame\Psr7\Csv\csv_create_from_psr7(Writer::class, $stream);
+        $csv = \Bakame\Psr7\Factory\csv_create_from_psr7(Writer::class, $stream);
         $this->assertSame("\n", $csv->getNewline());
         $csv->setNewline("\r\n");
         $csv->insertOne(['jane', 'doe']);
@@ -71,7 +71,7 @@ class StreamWrapperTest extends TestCase
         $stream->method('eof')->willReturn(true);
 
         $this->expectException(InvalidArgumentException::class);
-        \Bakame\Psr7\Csv\csv_create_from_psr7('reader', $stream);
+        \Bakame\Psr7\Factory\csv_create_from_psr7('reader', $stream);
     }
 
     /**
@@ -90,6 +90,6 @@ class StreamWrapperTest extends TestCase
         $stream->method('isReadable')->willReturn(false);
 
         $this->expectException(InvalidArgumentException::class);
-        \Bakame\Psr7\Csv\csv_create_from_psr7(Writer::class, $stream);
+        \Bakame\Psr7\Factory\csv_create_from_psr7(Writer::class, $stream);
     }
 }

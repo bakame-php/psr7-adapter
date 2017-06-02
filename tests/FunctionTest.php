@@ -1,6 +1,6 @@
 <?php
 
-namespace BakameTest\Psr7\Csv;
+namespace BakameTest\Psr7\Factory;
 
 use InvalidArgumentException;
 use League\Csv\Reader;
@@ -10,7 +10,7 @@ use Psr\Http\Message\StreamInterface;
 use SplFileObject;
 
 /**
- * @coversDefaultClass Bakame\Psr7\Csv\csv_create_from_psr7
+ * @coversDefaultClass Bakame\Psr7\Factory\csv_create_from_psr7
  */
 class FunctionTest extends TestCase
 {
@@ -27,7 +27,7 @@ class FunctionTest extends TestCase
         $stream->method('isReadable')->willReturn(true);
         $stream->method('eof')->willReturn(true);
 
-        $this->assertInstanceOf(Reader::class, \Bakame\Psr7\Csv\csv_create_from_psr7(Reader::class, $stream));
+        $this->assertInstanceOf(Reader::class, \Bakame\Psr7\Factory\csv_create_from_psr7(Reader::class, $stream));
     }
 
     public function testCreateWriterFromStreamInterface()
@@ -43,7 +43,7 @@ class FunctionTest extends TestCase
         $stream->method('isReadable')->willReturn(false);
         $stream->method('eof')->willReturn(true);
 
-        $this->assertInstanceOf(Writer::class, \Bakame\Psr7\Csv\csv_create_from_psr7(Writer::class, $stream));
+        $this->assertInstanceOf(Writer::class, \Bakame\Psr7\Factory\csv_create_from_psr7(Writer::class, $stream));
     }
 
     public function testThrowsExceptionIfStreamInterfaceIsNotSeekable()
@@ -60,7 +60,7 @@ class FunctionTest extends TestCase
         $stream->method('eof')->willReturn(true);
 
         $this->expectException(InvalidArgumentException::class);
-        \Bakame\Psr7\Csv\csv_create_from_psr7(Reader::class, $stream);
+        \Bakame\Psr7\Factory\csv_create_from_psr7(Reader::class, $stream);
     }
 
     public function testThrowsExceptionIfClassIsNotAbstractCsvSubclass()
@@ -77,6 +77,6 @@ class FunctionTest extends TestCase
         $stream->method('eof')->willReturn(true);
 
         $this->expectException(InvalidArgumentException::class);
-        $this->assertInstanceOf(Writer::class, \Bakame\Psr7\Csv\csv_create_from_psr7(SplFileObject::class, $stream));
+        $this->assertInstanceOf(Writer::class, \Bakame\Psr7\Factory\csv_create_from_psr7(SplFileObject::class, $stream));
     }
 }

@@ -11,7 +11,7 @@
 * file that was distributed with this source code.
 */
 
-namespace Bakame\Psr7\Csv;
+namespace Bakame\Psr7\Factory;
 
 use InvalidArgumentException;
 use Psr\Http\Message\StreamInterface;
