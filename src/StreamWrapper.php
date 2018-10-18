@@ -1,24 +1,25 @@
 <?php
 
 /**
-* This file is part of the bakame.psr7-csv-factory library
-*
-* @license http://opensource.org/licenses/MIT
-* @link https://github.com/bakame-php/psr7-csv-factory
-* @version 1.0.0
-*
-* For the full copyright and license information, please view the LICENSE
-* file that was distributed with this source code.
-*/
+ * This file is part of the bakame.psr7-csv-factory library.
+ *
+ * @license http://opensource.org/licenses/MIT
+ * @link https://github.com/bakame-php/psr7-csv-factory
+ * @version 1.0.0
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+declare(strict_types=1);
 
 namespace Bakame\Psr7\Factory;
 
-use InvalidArgumentException;
 use Psr\Http\Message\StreamInterface;
 
 /**
  * StreamWrapper class to enable using a
- * PSR-7 StreamInterface with League\Csv connection object
+ * PSR-7 StreamInterface with League\Csv connection object.
  *
  * This class is heavily based on the code found in Guzzle\Psr7 package
  *
@@ -31,59 +32,67 @@ final class StreamWrapper
     const PROTOCOL = 'bakame+csv';
 
     /**
-     * the resource context
+     * the resource context.
      *
      * @var resource
      */
     public $context;
 
     /**
-     * the PSR-7 Stream
+     * the PSR-7 Stream.
      *
      * @var StreamInterface
      */
     private $stream;
 
     /**
-     * Resource open mode
+     * Resource open mode.
      *
      * @var string
      */
     private $mode;
 
     /**
-     * register the class as a stream wrapper
+     * register the class as a stream wrapper.
      */
-    public static function register()
+    public static function register(): void
     {
-        if (!in_array(self::PROTOCOL, stream_get_wrappers())) {
+        if (!in_array(self::PROTOCOL, stream_get_wrappers(), true)) {
             stream_wrapper_register(self::PROTOCOL, __CLASS__);
         }
     }
 
     /**
-     * Return a stream resource from a StreamInterface object
+     * Return a stream resource from a StreamInterface object.
      *
-     * @param StreamInterface $stream
+     * @throws Exception if the stream is not readable and writable
      *
-     * @throws InvalidArgumentException if the stream is not readable and writable
-     *
-     * @return resource
+     * @return resource|bool
      */
     public static function getResource(StreamInterface $stream)
     {
+        if (!$stream->isSeekable()) {
+            throw new Exception('Argument passed must be a seekable StreamInterface object');
+        }
+
         if (!$stream->isReadable() && !$stream->isWritable()) {
-            throw new InvalidArgumentException('Argument passed must be a StreamInterface object readable, writable or both');
+            throw new Exception('Argument passed must be a StreamInterface object readable, writable or both');
         }
 
         self::register();
 
-        return fopen(
+        $stream = fopen(
             self::PROTOCOL.'://stream',
             $stream->isReadable() ? ($stream->isWritable() ? 'r+' : 'r') : 'w',
-            null,
+            false,
             stream_context_create([self::PROTOCOL => ['stream' => $stream]])
         );
+
+        if (is_resource($stream)) {
+            return $stream;
+        }
+
+        throw new Exception('The stream could not be created');
     }
 
     /**
@@ -116,7 +125,7 @@ final class StreamWrapper
      */
     public function stream_write($data)
     {
-        return (int) $this->stream->write($data);
+        return $this->stream->write($data);
     }
 
     /**

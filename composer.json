@@ -13,12 +13,16 @@
         }
     ],
     "require": {
-        "league/csv": ">=8.2.1",
+        "league/csv": "^9.1.0",
         "psr/http-message": "^1.0"
     },
     "require-dev": {
-        "phpunit/phpunit": "^6.1",
-        "friendsofphp/php-cs-fixer": "^2.3"
+        "friendsofphp/php-cs-fixer": "^2.0",
+        "infection/infection": "^0.10.5",
+        "phpunit/phpunit" : "^7.0",
+        "phpstan/phpstan": "^0.10.1",
+        "phpstan/phpstan-strict-rules": "^0.10.0",
+        "phpstan/phpstan-phpunit": "^0.10.0"
     },
     "autoload": {
         "psr-4": {
@@ -28,12 +32,32 @@
     "autoload-dev": {
         "psr-4": {
             "BakameTest\\Psr7\\Factory\\": "tests"
-        },
-        "files": ["src/functions_include.php"]
+        }
     },
     "scripts": {
-        "test": "phpunit --coverage-text; php-cs-fixer fix -v --diff --dry-run --allow-risky=yes;",
+        "phpcs": "php-cs-fixer fix -v --diff --dry-run --allow-risky=yes;",
+        "phpstan-src": "phpstan analyse -l 7 -c phpstan.src.neon src",
+        "phpstan-tests": "phpstan analyse -l 7 -c phpstan.tests.neon tests",
+        "phpstan": [
+            "@phpstan-src",
+            "@phpstan-tests"
+        ],
         "phpunit": "phpunit --coverage-text",
-        "phpcs": "php-cs-fixer fix -v --diff --dry-run --allow-risky=yes;"
-	}
+        "infection": "infection -j$(nproc) --coverage=build",
+        "test": [
+            "@phpstan-src",
+            "@phpstan-tests",
+            "@phpcs",
+            "@phpunit",
+            "@infection"
+        ]
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "1.x-dev"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    }
 }

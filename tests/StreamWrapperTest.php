@@ -1,9 +1,20 @@
 <?php
 
+/**
+ * This file is part of the bakame.psr7-csv-factory library.
+ *
+ * @license http://opensource.org/licenses/MIT
+ * @link https://github.com/bakame-php/psr7-csv-factory
+ * @version 1.0.0
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace BakameTest\Psr7\Factory;
 
+use Bakame\Psr7\Factory\Exception;
 use Bakame\Psr7\Factory\StreamWrapper;
-use InvalidArgumentException;
 use League\Csv\Writer;
 use PHPUnit\Framework\Error\Warning;
 use PHPUnit\Framework\TestCase;
@@ -17,11 +28,11 @@ class StreamWrapperTest extends TestCase
     public function testLeagueCsvWriter()
     {
         $stream = new Stream(tmpfile());
-        $csv = \Bakame\Psr7\Factory\csv_create_from_psr7(Writer::class, $stream);
-        $this->assertSame("\n", $csv->getNewline());
+        $csv = Writer::createFromStream(StreamWrapper::getResource($stream));
+        self::assertSame("\n", $csv->getNewline());
         $csv->setNewline("\r\n");
         $csv->insertOne(['jane', 'doe']);
-        $this->assertSame("jane,doe\r\n", (string) $csv);
+        self::assertSame("jane,doe\r\n", (string) $csv);
         $csv = null;
         $stream = null;
     }
@@ -41,37 +52,17 @@ class StreamWrapperTest extends TestCase
         $resource = fopen(
             StreamWrapper::PROTOCOL.'://stream',
             'w',
-            null,
+            false,
             stream_context_create([StreamWrapper::PROTOCOL => ['stream' => $stream]])
         );
 
-        $this->assertSame(33188, fstat($resource)['mode']);
+        self::assertSame(33188, fstat($resource)['mode']);
     }
 
     public function testResourceOpeningFailed()
     {
-        $this->expectException(Warning::class);
+        self::expectException(Warning::class);
         fopen(StreamWrapper::PROTOCOL.'://stream', 'r+');
-    }
-
-    /**
-     * @covers ::getResource
-     */
-    public function testCreateFromStreamInterfaceThrowsException()
-    {
-        $stream = $this
-            ->getMockBuilder(StreamInterface::class)
-            ->setMethods(['isSeekable', 'isReadable', 'isWritable', 'eof'])
-            ->getMockForAbstractClass()
-        ;
-
-        $stream->method('isSeekable')->willReturn(true);
-        $stream->method('isWritable')->willReturn(true);
-        $stream->method('isReadable')->willReturn(false);
-        $stream->method('eof')->willReturn(true);
-
-        $this->expectException(InvalidArgumentException::class);
-        \Bakame\Psr7\Factory\csv_create_from_psr7('reader', $stream);
     }
 
     /**
@@ -89,7 +80,7 @@ class StreamWrapperTest extends TestCase
         $stream->method('isWritable')->willReturn(false);
         $stream->method('isReadable')->willReturn(false);
 
-        $this->expectException(InvalidArgumentException::class);
-        \Bakame\Psr7\Factory\csv_create_from_psr7(Writer::class, $stream);
+        self::expectException(Exception::class);
+        Writer::createFromStream(StreamWrapper::getResource($stream));
     }
 }

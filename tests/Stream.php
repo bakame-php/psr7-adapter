@@ -1,19 +1,32 @@
 <?php
 
+/**
+ * This file is part of the bakame.psr7-csv-factory library.
+ *
+ * @license http://opensource.org/licenses/MIT
+ * @link https://github.com/bakame-php/psr7-csv-factory
+ * @version 1.0.0
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+declare(strict_types=1);
+
 namespace BakameTest\Psr7\Factory;
 
 use Psr\Http\Message\StreamInterface;
 use RuntimeException;
 
 /**
- * StreamInterface implementation heavily based on Diactoros Stream class
+ * StreamInterface implementation heavily based on Diactoros Stream class.
  *
  * @link https://github.com/zendframework/zend-diactoros/blob/master/src/Stream.php
  */
 class Stream implements StreamInterface
 {
     /**
-     * Underlying stream resource
+     * Underlying stream resource.
      *
      * @var resource
      */
@@ -49,12 +62,14 @@ class Stream implements StreamInterface
      */
     public function close()
     {
-        if (!$this->resource) {
+        if (null === $this->resource) {
             return;
         }
 
         $resource = $this->detach();
-        fclose($resource);
+        if (null !== $resource) {
+            fclose($resource);
+        }
     }
 
     /**
@@ -63,7 +78,8 @@ class Stream implements StreamInterface
     public function detach()
     {
         $resource = $this->resource;
-        $this->resource = null;
+        unset($this->resource);
+
         return $resource;
     }
 
@@ -85,12 +101,12 @@ class Stream implements StreamInterface
      */
     public function tell()
     {
-        if (!$this->resource) {
+        if (null === $this->resource) {
             throw new RuntimeException('No resource available; cannot tell position');
         }
 
         $result = ftell($this->resource);
-        if (! is_int($result)) {
+        if (!is_int($result)) {
             throw new RuntimeException('Error occurred during tell operation');
         }
 
@@ -102,7 +118,7 @@ class Stream implements StreamInterface
      */
     public function eof()
     {
-        if (!$this->resource) {
+        if (null === $this->resource) {
             return true;
         }
 
@@ -114,7 +130,7 @@ class Stream implements StreamInterface
      */
     public function isSeekable()
     {
-        if (!$this->resource) {
+        if (null === $this->resource) {
             return false;
         }
 
@@ -127,7 +143,7 @@ class Stream implements StreamInterface
      */
     public function seek($offset, $whence = SEEK_SET)
     {
-        if (!$this->resource) {
+        if (null === $this->resource) {
             throw new RuntimeException('No resource available; cannot seek position');
         }
 
@@ -157,7 +173,7 @@ class Stream implements StreamInterface
      */
     public function isWritable()
     {
-        if (!$this->resource) {
+        if (null === $this->resource) {
             return false;
         }
 
@@ -172,7 +188,7 @@ class Stream implements StreamInterface
      */
     public function write($string)
     {
-        if (!$this->resource) {
+        if (null === $this->resource) {
             throw new RuntimeException('No resource available; cannot write');
         }
 
@@ -194,7 +210,7 @@ class Stream implements StreamInterface
      */
     public function isReadable()
     {
-        if (!$this->resource) {
+        if (null === $this->resource) {
             return false;
         }
 
@@ -208,7 +224,7 @@ class Stream implements StreamInterface
      */
     public function read($length)
     {
-        if (!$this->resource) {
+        if (null === $this->resource) {
             throw new RuntimeException('No resource available; cannot read');
         }
 

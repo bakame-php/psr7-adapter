@@ -1,0 +1,8 @@
+includes:
+- vendor/phpstan/phpstan-phpunit/extension.neon
+- vendor/phpstan/phpstan-phpunit/rules.neon
+parameters:
+    ignoreErrors:
+    - '#Parameter \#1 \$stream of static method League\\Csv\\AbstractCsv::createFromStream\(\) expects resource, bool\|resource given.#'
+    - '#Parameter \#1 \$fp of function fstat expects resource, resource\|false given.#'
+    reportUnmatchedIgnoredErrors: true
