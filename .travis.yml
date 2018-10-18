@@ -5,9 +5,15 @@ sudo: false
 matrix:
   include:
     - php: 7.0
-      env: VALIDATE_CODING_STYLE=false
+      env: COLLECT_COVERAGE=false VALIDATE_CODING_STYLE=false RUN_PHPSTAN=false RUN_INFECTION=false IGNORE_PLATFORMS=false
     - php: 7.1
-      env: VALIDATE_CODING_STYLE=true
+      env: COLLECT_COVERAGE=false VALIDATE_CODING_STYLE=false RUN_PHPSTAN=false RUN_INFECTION=false IGNORE_PLATFORMS=false
+    - php: 7.2
+      env: COLLECT_COVERAGE=true VALIDATE_CODING_STYLE=true RUN_PHPSTAN=true RUN_INFECTION=true IGNORE_PLATFORMS=false
+    - php: nightly
+      env: COLLECT_COVERAGE=false VALIDATE_CODING_STYLE=false RUN_PHPSTAN=false RUN_INFECTION=false IGNORE_PLATFORMS=true
+  allow_failures:
+    - php: nightly
   fast_finish: true
 
 cache:
@@ -18,10 +24,14 @@ before_install:
   - travis_retry composer self-update
 
 install:
-  - travis_retry composer update --no-interaction --prefer-source
+  - if [ "$IGNORE_PLATFORMS" == "true" ]; then travis_retry composer update --no-interaction --prefer-source --ignore-platform-reqs; fi
+  - if [ "$IGNORE_PLATFORMS" == "false" ]; then travis_retry composer update --no-interaction --prefer-source; fi
 
 script:
+  - if [ "$RUN_PHPSTAN" == "true" ]; then composer phpstan; fi
+  - if [ "$VALIDATE_CODING_STYLE" == "true" ]; then composer phpcs; fi
   - composer phpunit
 
 after_script:
- - if [ "$VALIDATE_CODING_STYLE" == "true" ]; then composer phpcs fi
+  - if [ "$RUN_INFECTION" == "true" ]; then composer infection; fi
+  - if [ "$COLLECT_COVERAGE" == "true" ]; then wget https://scrutinizer-ci.com/ocular.phar && php ocular.phar code-coverage:upload --format=php-clover build/clover.xml; fi
