@@ -13,12 +13,11 @@
         }
     ],
     "require": {
-        "league/csv": "^9.1.0",
         "psr/http-message": "^1.0"
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^2.0",
-        "infection/infection": "^0.10.5",
+        "league/csv": "^9.1.0",
         "phpunit/phpunit" : "^7.0",
         "phpstan/phpstan": "^0.10.1",
         "phpstan/phpstan-strict-rules": "^0.10.0",
@@ -26,13 +25,13 @@
     },
     "autoload": {
         "psr-4": {
-            "Bakame\\Csv\\Extension\\": "src"
+            "Bakame\\Psr7\\Adapter\\": "src"
         },
         "files" : ["src/functions_include.php"]
     },
     "autoload-dev": {
         "psr-4": {
-            "BakameTest\\Csv\\Extension\\": "tests"
+            "BakameTest\\Psr7\\Adapter\\": "tests"
         }
     },
     "scripts": {
@@ -44,13 +43,11 @@
             "@phpstan-tests"
         ],
         "phpunit": "phpunit --coverage-text",
-        "infection": "infection -j$(nproc) --coverage=build",
         "test": [
             "@phpstan-src",
             "@phpstan-tests",
             "@phpcs",
-            "@phpunit",
-            "@infection"
+            "@phpunit"
         ]
     },
     "extra": {

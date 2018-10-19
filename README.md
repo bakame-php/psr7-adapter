@@ -1,15 +1,15 @@
-Bakame PSR-7 Csv Factory
+Bakame PSR-7 Adapter
 =====
 
-This package enables instantiating [League CSV object](http://csv.thephpleague.com) from [PSR-7 StreamInterface objects](http://www.php-fig.org/psr/psr-7/).
+This package enables converting a [PSR-7 StreamInterface objects](http://www.php-fig.org/psr/psr-7/) into a PHP stream and thus makes it possible to be used with [League CSV object](http://csv.thephpleague.com) package.
 
 Requirements
 -------
 
-- [League\CSV](http://csv.thephpleague.com) 8.2+
+You need **PHP >= 7.0** but the latest stable version of PHP is recommended.
 - A [PSR-7](https://packagist.org/providers/psr/http-message-implementation) http mesage implementation ([Diactoros](https://github.com/zendframework/zend-diactoros), [Guzzle](https://github.com/guzzle/psr7), [Slim](https://github.com/slimphp/Slim), etc...)
 
-Installations
+Installation
 -------
 
 Install `bakame/psr7-csv-factory` using Composer.
@@ -21,7 +21,7 @@ $ composer require bakame/psr7-csv-factory
 Usage
 ------
 
-Here's a simple usage using `Slim\Framework` as the PSR-7 implementation.
+Here's a simple usage to ease `League\Csv` work with `Slim\Framework` as the PSR-7 implementation.
 
 ```php
 <?php
@@ -31,7 +31,7 @@ use League\Csv\Writer;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
 use Slim\App;
-use function Bakame\Csv\Extension\stream_from;
+use function Bakame\Psr7\Adapter\stream_from;
 
 $app = new App();
 $app->post('/csv-delimiter-converter', function (Request $request, Response $response): Response {
@@ -59,8 +59,7 @@ $app->post('/csv-delimiter-converter', function (Request $request, Response $res
 $app->run();
 ```
 
-In both cases, the `StreamInterface` objects are never detached or removed from their parent objects (ie the `Request` object or the `Response` object), the CSV objects operate as adapters on the `StreamInterface` object to ease retrieving and/or sending CSV documents.
-
+In both cases, the `StreamInterface` objects are never detached or removed from their parent objects (ie the `Request` object or the `Response` object), the CSV objects operate on their `StreamInterface` property using the adapter stream returned by `stream_from`.
 
 ### stream_from
 
@@ -68,13 +67,12 @@ In both cases, the `StreamInterface` objects are never detached or removed from 
 <?php
 
 use Psr\Http\Message\StreamInterface;
-use function Bakame\Csv\Extension\stream_from;
+use function Bakame\Psr7\Adapter\stream_from;
 
-function stream_from(StreamInterface $stream): resource
+function stream_from(StreamInterface $stream): resource;
 ```
 
-returns a PHP stream resource from a PSR-7 `StreamInterface` object.  
-
+returns a PHP stream resource from a PSR-7 `StreamInterface` object.
 
 #### Parameter
 
@@ -86,7 +84,7 @@ A PHP stream resource
 
 #### Exception
 
-A `Bakame\Csv\Extension\Exception` will be triggered when the following situations are encountered:
+A `Bakame\Psr7\Adapter\Exception` will be triggered when the following situations are encountered:
 
 - If the `StreamInterface` is not readable and writable
 - If the stream resource could not be created.

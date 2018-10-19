@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Bakame CSV PSR-7 StreamInterface bridge.
+ * Bakame PSR-7 Stream Adapter package.
  *
  * @author Ignace Nyamagana Butera <nyamsprod@gmail.com>
  * @license http://opensource.org/licenses/MIT
@@ -14,7 +14,7 @@
 
 declare(strict_types=1);
 
-namespace Bakame\Csv\Extension;
+namespace Bakame\Psr7\Adapter;
 
 use Psr\Http\Message\StreamInterface;
 use function in_array;
@@ -30,11 +30,11 @@ use function stream_wrapper_register;
  *
  * @link https://github.com/guzzle/psr7/blob/master/src/StreamWrapper.php
  *
- * @internal used by csv_create_from_stream to wrap the StreamInterface object
+ * @internal used by stream_from to wrap the StreamInterface object
  */
 final class StreamWrapper
 {
-    const PROTOCOL = 'bakame+csv';
+    const PROTOCOL = 'bakame+stream';
 
     /**
      * the resource context.
@@ -124,6 +124,13 @@ final class StreamWrapper
         $this->stream->seek($offset, $whence);
 
         return true;
+    }
+
+    public function stream_cast(int $cast_as)
+    {
+        $stream = clone $this->stream;
+
+        return $stream->detach();
     }
 
     /**

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Bakame CSV PSR-7 StreamInterface bridge.
+ * Bakame PSR-7 Stream Adapter package.
  *
  * @author Ignace Nyamagana Butera <nyamsprod@gmail.com>
  * @license http://opensource.org/licenses/MIT
@@ -14,6 +14,6 @@
 
 declare(strict_types=1);
 
-if (!function_exists('\Bakame\Csv\Extension\stream_from')) {
+if (!function_exists('\Bakame\Psr7\Adapter\stream_from')) {
     require __DIR__.'/functions.php';
 }

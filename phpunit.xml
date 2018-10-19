@@ -12,7 +12,7 @@
          stopOnFailure="false">
 
     <testsuites>
-        <testsuite name="Psr7 Csv Factory Test Suite">
+        <testsuite name="Psr7 Adapter Test Suite">
             <directory>tests</directory>
         </testsuite>
     </testsuites>

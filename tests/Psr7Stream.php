@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Bakame CSV PSR-7 StreamInterface bridge.
+ * Bakame PSR-7 Stream Adapter package.
  *
  * @author Ignace Nyamagana Butera <nyamsprod@gmail.com>
  * @license http://opensource.org/licenses/MIT
@@ -14,7 +14,7 @@
 
 declare(strict_types=1);
 
-namespace BakameTest\Csv\Extension;
+namespace BakameTest\Psr7\Adapter;
 
 use Psr\Http\Message\StreamInterface;
 use RuntimeException;

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Bakame CSV PSR-7 StreamInterface bridge.
+ * Bakame PSR-7 Stream Adapter package.
  *
  * @author Ignace Nyamagana Butera <nyamsprod@gmail.com>
  * @license http://opensource.org/licenses/MIT
@@ -12,7 +12,7 @@
  * file that was distributed with this source code.
  */
 
-namespace Bakame\Csv\Extension;
+namespace Bakame\Psr7\Adapter;
 
 /**
  * Base Exception.
