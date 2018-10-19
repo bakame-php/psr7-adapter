@@ -37,7 +37,7 @@ function stream_from(StreamInterface $stream, int $flag = 0)
 
     $open_mode = $flag & FILE_APPEND ? 'a' : 'w';
     if ($stream->isReadable()) {
-        $open_mode = 'r+';
+        $open_mode = $flag & FILE_APPEND ? 'a+' : 'r+';
         if (!$stream->isWritable()) {
             $open_mode = 'r';
         }

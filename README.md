@@ -76,14 +76,15 @@ In both cases, the `StreamInterface` objects are never detached or removed from 
 use Psr\Http\Message\StreamInterface;
 use function Bakame\Psr7\Adapter\stream_from;
 
-function stream_from(StreamInterface $stream): resource;
+function stream_from(StreamInterface $stream, int $flag = 0): resource;
 ```
 
 returns a PHP stream resource from a PSR-7 `StreamInterface` object.
 
-#### Parameter
+#### Parameters
 
 - `$stream` : a object implementing PSR-7 `StreamInterface` interface.
+- `$flag` : `FILE_APPEND` flag from `file_put_contents`
 
 #### Returned values
 
