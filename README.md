@@ -49,7 +49,7 @@ $app->post('/csv-delimiter-converter', function (Request $request, Response $res
     }
 
     //let's create a CSV Writer object from the response body
-    $output = Writer::createFromStream(stream_from($psr7stream, $file));
+    $output = Writer::createFromStream(stream_from($psr7stream, $flag));
     //we convert the delimiter from ";" to "|"
     $output->setDelimiter('|');
     $output->insertAll($csv);
