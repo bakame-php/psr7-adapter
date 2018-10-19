@@ -23,7 +23,7 @@ use function stream_get_wrappers;
 use function stream_wrapper_register;
 
 /**
- * StreamWrapper class to enable converting a StreamInterface instance into a PHP Stream
+ * StreamWrapper class to enable converting a StreamInterface instance into a PHP Stream.
  *
  * This class is heavily based on the code found in Guzzle\Psr7 package
  *

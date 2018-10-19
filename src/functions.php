@@ -17,6 +17,7 @@ declare(strict_types=1);
 namespace Bakame\Psr7\Adapter;
 
 use Psr\Http\Message\StreamInterface;
+use const FILE_APPEND;
 use function fopen;
 use function is_resource;
 use function stream_context_create;
@@ -28,13 +29,13 @@ use function stream_context_create;
  *
  * @return resource
  */
-function stream_from(StreamInterface $stream)
+function stream_from(StreamInterface $stream, int $flag = 0)
 {
     if (!$stream->isReadable() && !$stream->isWritable()) {
         throw new Exception('The '.StreamInterface::class.' instance must be readable, writable or both');
     }
 
-    $open_mode = 'w';
+    $open_mode = $flag & FILE_APPEND ? 'a' : 'w';
     if ($stream->isReadable()) {
         $open_mode = 'r+';
         if (!$stream->isWritable()) {

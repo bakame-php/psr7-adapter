@@ -41,13 +41,15 @@ $app->post('/csv-delimiter-converter', function (Request $request, Response $res
     $csv = Reader::createFromStream(stream_from($input_csv->getStream()));
     $csv->setDelimiter(';');
 
+    $flag = 0;
     $psr7stream = $response->getBody();
     if ('' !== $csv->getInputBOM()) {
+        $flag = FILE_APPEND;
         $psr7stream->write($csv->getInputBOM());
     }
 
     //let's create a CSV Writer object from the response body
-    $output = Writer::createFromStream(stream_from($psr7stream));
+    $output = Writer::createFromStream(stream_from($psr7stream, $file));
     //we convert the delimiter from ";" to "|"
     $output->setDelimiter('|');
     $output->insertAll($csv);
