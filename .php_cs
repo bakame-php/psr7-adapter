@@ -1,10 +1,11 @@
 <?php
 
 $header = <<<EOF
-This file is part of the bakame.psr7-csv-factory library
+Bakame CSV PSR-7 StreamInterface bridge
 
+@author Ignace Nyamagana Butera <nyamsprod@gmail.com>
 @license http://opensource.org/licenses/MIT
-@link https://github.com/bakame-php/psr7-csv-factory
+@link https://github.com/bakame-php/csv-psr7-bridge
 @version 1.0.0
 
 For the full copyright and license information, please view the LICENSE

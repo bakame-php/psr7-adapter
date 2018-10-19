@@ -1,27 +1,27 @@
 <?php
 
 /**
- * This file is part of the bakame.psr7-csv-factory library.
+ * Bakame CSV PSR-7 StreamInterface bridge.
  *
+ * @author Ignace Nyamagana Butera <nyamsprod@gmail.com>
  * @license http://opensource.org/licenses/MIT
- * @link https://github.com/bakame-php/psr7-csv-factory
+ * @link https://github.com/bakame-php/csv-psr7-bridge
  * @version 1.0.0
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
 
-namespace BakameTest\Psr7\Factory;
+namespace BakameTest\Csv\Extension;
 
-use Bakame\Psr7\Factory\Exception;
-use Bakame\Psr7\Factory\StreamWrapper;
 use League\Csv\Reader;
 use League\Csv\Writer;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\StreamInterface;
+use function Bakame\Csv\Extension\stream_from;
 
 /**
- * @coversDefaultClass Bakame\Psr7\Factory\csv_create_from_psr7
+ * @coversDefaultClass Bakame\Csv\Extension\stream_from
  */
 class FunctionTest extends TestCase
 {
@@ -38,7 +38,7 @@ class FunctionTest extends TestCase
         $stream->method('isReadable')->willReturn(true);
         $stream->method('eof')->willReturn(true);
 
-        self::assertInstanceOf(Reader::class, Reader::createFromStream(StreamWrapper::getResource($stream)));
+        self::assertInstanceOf(Reader::class, Reader::createFromStream(stream_from($stream)));
     }
 
     public function testCreateWriterFromStreamInterface()
@@ -54,23 +54,6 @@ class FunctionTest extends TestCase
         $stream->method('isReadable')->willReturn(false);
         $stream->method('eof')->willReturn(true);
 
-        self::assertInstanceOf(Writer::class, Writer::createFromStream(StreamWrapper::getResource($stream)));
-    }
-
-    public function testThrowsExceptionIfStreamInterfaceIsNotSeekable()
-    {
-        $stream = $this
-            ->getMockBuilder(StreamInterface::class)
-            ->setMethods(['isSeekable', 'isReadable', 'isWritable', 'eof'])
-            ->getMockForAbstractClass()
-        ;
-
-        $stream->method('isSeekable')->willReturn(false);
-        $stream->method('isWritable')->willReturn(true);
-        $stream->method('isReadable')->willReturn(true);
-        $stream->method('eof')->willReturn(true);
-
-        self::expectException(Exception::class);
-        Reader::createFromStream(StreamWrapper::getResource($stream));
+        self::assertInstanceOf(Writer::class, Writer::createFromStream(stream_from($stream)));
     }
 }

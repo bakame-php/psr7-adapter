@@ -2,6 +2,6 @@ includes:
 - vendor/phpstan/phpstan-strict-rules/rules.neon
 parameters:
     ignoreErrors:
-        - '#Method Bakame\\Psr7\\Factory\\StreamWrapper::[a-z][A-Za-z_]+\(\) has parameter \$(.*) with no typehint specified.#'
-        - '#Method Bakame\\Psr7\\Factory\\StreamWrapper::[a-z][A-Za-z_]+\(\) has no return typehint specified.#'
+        - '#Method Bakame\\Csv\\Extension\\StreamWrapper::[a-z][A-Za-z_]+\(\) has parameter \$(.*) with no typehint specified.#'
+        - '#Method Bakame\\Csv\\Extension\\StreamWrapper::[a-z][A-Za-z_]+\(\) has no return typehint specified.#'
     reportUnmatchedIgnoredErrors: true

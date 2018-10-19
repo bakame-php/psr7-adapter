@@ -1,38 +1,40 @@
 <?php
 
 /**
- * This file is part of the bakame.psr7-csv-factory library.
+ * Bakame CSV PSR-7 StreamInterface bridge.
  *
+ * @author Ignace Nyamagana Butera <nyamsprod@gmail.com>
  * @license http://opensource.org/licenses/MIT
- * @link https://github.com/bakame-php/psr7-csv-factory
+ * @link https://github.com/bakame-php/csv-psr7-bridge
  * @version 1.0.0
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
 
-namespace BakameTest\Psr7\Factory;
+namespace BakameTest\Csv\Extension;
 
-use Bakame\Psr7\Factory\Exception;
-use Bakame\Psr7\Factory\StreamWrapper;
+use Bakame\Csv\Extension\Exception;
+use Bakame\Csv\Extension\StreamWrapper;
 use League\Csv\Writer;
 use PHPUnit\Framework\Error\Warning;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\StreamInterface;
+use function Bakame\Csv\Extension\stream_from;
 
 /**
- * @coversDefaultClass Bakame\Psr7\Factory\StreamWrapper
+ * @coversDefaultClass Bakame\Csv\Extension\StreamWrapper
  */
 class StreamWrapperTest extends TestCase
 {
     public function testLeagueCsvWriter()
     {
-        $stream = new Stream(tmpfile());
-        $csv = Writer::createFromStream(StreamWrapper::getResource($stream));
+        $stream = new Psr7Stream(tmpfile());
+        $csv = Writer::createFromStream(stream_from($stream));
         self::assertSame("\n", $csv->getNewline());
         $csv->setNewline("\r\n");
         $csv->insertOne(['jane', 'doe']);
-        self::assertSame("jane,doe\r\n", (string) $csv);
+        self::assertSame("jane,doe\r\n", $csv->getContent());
         $csv = null;
         $stream = null;
     }
@@ -66,7 +68,7 @@ class StreamWrapperTest extends TestCase
     }
 
     /**
-     * @covers ::getResource
+     * @covers Bakame\Csv\Extension\stream_from
      */
     public function testGetResourceThrowsExceptionIfStreamInterfaceIsNotReadableAndWritable()
     {
@@ -81,6 +83,6 @@ class StreamWrapperTest extends TestCase
         $stream->method('isReadable')->willReturn(false);
 
         self::expectException(Exception::class);
-        Writer::createFromStream(StreamWrapper::getResource($stream));
+        Writer::createFromStream(stream_from($stream));
     }
 }

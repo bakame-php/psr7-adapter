@@ -1,10 +1,11 @@
 <?php
 
 /**
- * This file is part of the bakame.psr7-csv-factory library.
+ * Bakame CSV PSR-7 StreamInterface bridge.
  *
+ * @author Ignace Nyamagana Butera <nyamsprod@gmail.com>
  * @license http://opensource.org/licenses/MIT
- * @link https://github.com/bakame-php/psr7-csv-factory
+ * @link https://github.com/bakame-php/csv-psr7-bridge
  * @version 1.0.0
  *
  * For the full copyright and license information, please view the LICENSE
@@ -13,9 +14,13 @@
 
 declare(strict_types=1);
 
-namespace Bakame\Psr7\Factory;
+namespace Bakame\Csv\Extension;
 
 use Psr\Http\Message\StreamInterface;
+use function in_array;
+use function stream_context_get_options;
+use function stream_get_wrappers;
+use function stream_wrapper_register;
 
 /**
  * StreamWrapper class to enable using a
@@ -55,44 +60,11 @@ final class StreamWrapper
     /**
      * register the class as a stream wrapper.
      */
-    public static function register(): void
+    public static function register()
     {
         if (!in_array(self::PROTOCOL, stream_get_wrappers(), true)) {
-            stream_wrapper_register(self::PROTOCOL, __CLASS__);
+            stream_wrapper_register(self::PROTOCOL, self::class);
         }
-    }
-
-    /**
-     * Return a stream resource from a StreamInterface object.
-     *
-     * @throws Exception if the stream is not readable and writable
-     *
-     * @return resource|bool
-     */
-    public static function getResource(StreamInterface $stream)
-    {
-        if (!$stream->isSeekable()) {
-            throw new Exception('Argument passed must be a seekable StreamInterface object');
-        }
-
-        if (!$stream->isReadable() && !$stream->isWritable()) {
-            throw new Exception('Argument passed must be a StreamInterface object readable, writable or both');
-        }
-
-        self::register();
-
-        $stream = fopen(
-            self::PROTOCOL.'://stream',
-            $stream->isReadable() ? ($stream->isWritable() ? 'r+' : 'r') : 'w',
-            false,
-            stream_context_create([self::PROTOCOL => ['stream' => $stream]])
-        );
-
-        if (is_resource($stream)) {
-            return $stream;
-        }
-
-        throw new Exception('The stream could not be created');
     }
 
     /**

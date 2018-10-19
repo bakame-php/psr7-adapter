@@ -12,11 +12,8 @@
  * file that was distributed with this source code.
  */
 
-namespace Bakame\Csv\Extension;
+declare(strict_types=1);
 
-/**
- * Base Exception.
- */
-class Exception extends \Exception
-{
+if (!function_exists('\Bakame\Csv\Extension\stream_from')) {
+    require __DIR__.'/functions.php';
 }

@@ -26,12 +26,13 @@
     },
     "autoload": {
         "psr-4": {
-            "Bakame\\Psr7\\Factory\\": "src"
-        }
+            "Bakame\\Csv\\Extension\\": "src"
+        },
+        "files" : ["src/functions_include.php"]
     },
     "autoload-dev": {
         "psr-4": {
-            "BakameTest\\Psr7\\Factory\\": "tests"
+            "BakameTest\\Csv\\Extension\\": "tests"
         }
     },
     "scripts": {

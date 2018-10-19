@@ -1,10 +1,11 @@
 <?php
 
 /**
- * This file is part of the bakame.psr7-csv-factory library.
+ * Bakame CSV PSR-7 StreamInterface bridge.
  *
+ * @author Ignace Nyamagana Butera <nyamsprod@gmail.com>
  * @license http://opensource.org/licenses/MIT
- * @link https://github.com/bakame-php/psr7-csv-factory
+ * @link https://github.com/bakame-php/csv-psr7-bridge
  * @version 1.0.0
  *
  * For the full copyright and license information, please view the LICENSE
@@ -13,7 +14,7 @@
 
 declare(strict_types=1);
 
-namespace BakameTest\Psr7\Factory;
+namespace BakameTest\Csv\Extension;
 
 use Psr\Http\Message\StreamInterface;
 use RuntimeException;
@@ -23,7 +24,7 @@ use RuntimeException;
  *
  * @link https://github.com/zendframework/zend-diactoros/blob/master/src/Stream.php
  */
-class Stream implements StreamInterface
+final class Psr7Stream implements StreamInterface
 {
     /**
      * Underlying stream resource.

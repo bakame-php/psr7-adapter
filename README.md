@@ -31,20 +31,20 @@ use League\Csv\Writer;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
 use Slim\App;
-use function Bakame\Psr7\Factory\csv_create_from_psr7;
+use function Bakame\Csv\Extension\stream_from;
 
 $app = new App();
 $app->post('/csv-delimiter-converter', function (Request $request, Response $response): Response {
 
     //let's create a CSV Reader object from the submitted file
     $input_csv = $request->getUploadedFiles()['csv'];
-    $csv = csv_create_from_psr7(Reader::class, $input_csv->getStream());
+    $csv = Reader::createFromStream(stream_from($input_csv->getStream()));
     $csv->setDelimiter(';');
 
     //let's create a CSV Writer object from the response body
-    $output = csv_create_from_psr7(Writer::class, $response->getBody());
+    $output = Writer::createFromStream(stream_from($response->getBody()));
     //we convert the delimiter from ";" to "|"
-    $output->setDelimiter('|')
+    $output->setDelimiter('|');
     $output->insertAll($csv);
 
     //we add CSV header to enable downloading the converter document
@@ -62,36 +62,34 @@ $app->run();
 In both cases, the `StreamInterface` objects are never detached or removed from their parent objects (ie the `Request` object or the `Response` object), the CSV objects operate as adapters on the `StreamInterface` object to ease retrieving and/or sending CSV documents.
 
 
-### csv_create_from_psr7
+### stream_from
 
 ```php
 <?php
 
 use Psr\Http\Message\StreamInterface;
-use function Bakame\Psr7\Factory\csv_create_from_psr7;
+use function Bakame\Csv\Extension\stream_from;
 
-function csv_create_from_psr7(string $class_fqn, StreamInterface $stream) mixed
+function stream_from(StreamInterface $stream): resource
 ```
 
-returns a `League\Csv\Reader` or a `League\Csv\Writer` object from a PSR-7 `StreamInterface` object.  
-The returned CSV connections still needs to be properly set using `League\Csv` methods please refer to [League\Csv documentation](http://csv.thephpleague.com) for more information.
+returns a PHP stream resource from a PSR-7 `StreamInterface` object.  
 
-#### Parameters
 
-- `$class_fqn` : the fully qualified name of `League\Csv\Reader` or `League\Csv\Writer`.
+#### Parameter
+
 - `$stream` : a object implementing PSR-7 `StreamInterface` interface.
 
 #### Returned values
 
-Depending on the provided `$class_fqn` argument a `League\Csv\Reader` or a `League\Csv\Writer` will be returned
+A PHP stream resource
 
 #### Exception
 
-An `InvalidArgumentException` will be trigger when the following situations are encountered:
+A `Bakame\Csv\Extension\Exception` will be triggered when the following situations are encountered:
 
-- If the `StreamInterface` is not seekable
 - If the `StreamInterface` is not readable and writable
-- If the `$class_fqn` argument is not a subclass of `League\Csv\AbstractCsv`.
+- If the stream resource could not be created.
 
 Testing
 -------
