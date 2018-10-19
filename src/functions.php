@@ -24,7 +24,6 @@ use function stream_context_create;
 /**
  * Convert a PSR-7 stream into a PHP stream resource.
  *
- *
  * @throws Exception If the conversion can not be done
  *
  * @return resource

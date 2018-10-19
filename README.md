@@ -1,27 +1,27 @@
 Bakame PSR-7 Adapter
 =====
 
-This package enables converting a [PSR-7 StreamInterface objects](http://www.php-fig.org/psr/psr-7/) into a PHP stream and thus makes it possible to be used with [League CSV object](http://csv.thephpleague.com) package.
+This package enables converting a [PSR-7 StreamInterface objects](//www.php-fig.org/psr/psr-7/) into a PHP stream. This make it possible to work with functions and class which expect a PHP stream resource like [League CSV object](//csv.thephpleague.com) package.
 
 Requirements
 -------
 
 You need **PHP >= 7.0** but the latest stable version of PHP is recommended.
-- A [PSR-7](https://packagist.org/providers/psr/http-message-implementation) http mesage implementation ([Diactoros](https://github.com/zendframework/zend-diactoros), [Guzzle](https://github.com/guzzle/psr7), [Slim](https://github.com/slimphp/Slim), etc...)
+- A [PSR-7](//packagist.org/providers/psr/http-message-implementation) http mesage implementation ([Diactoros](//github.com/zendframework/zend-diactoros), [Guzzle](//github.com/guzzle/psr7), [Slim](//github.com/slimphp/Slim), etc...)
 
 Installation
 -------
 
-Install `bakame/psr7-csv-factory` using Composer.
+Install `bakame/psr7-adapter` using Composer.
 
 ```
-$ composer require bakame/psr7-csv-factory
+$ composer require bakame/psr7-adapter
 ```
 
 Usage
 ------
 
-Here's a simple usage to ease `League\Csv` work with `Slim\Framework` as the PSR-7 implementation.
+Here's a simple usage with `League\Csv` and `Slim\Framework`.
 
 ```php
 <?php
@@ -41,8 +41,13 @@ $app->post('/csv-delimiter-converter', function (Request $request, Response $res
     $csv = Reader::createFromStream(stream_from($input_csv->getStream()));
     $csv->setDelimiter(';');
 
+    $psr7stream = $response->getBody();
+    if ('' !== $csv->getInputBOM()) {
+        $psr7stream->write($csv->getInputBOM());
+    }
+
     //let's create a CSV Writer object from the response body
-    $output = Writer::createFromStream(stream_from($response->getBody()));
+    $output = Writer::createFromStream(stream_from($psr7stream));
     //we convert the delimiter from ";" to "|"
     $output->setDelimiter('|');
     $output->insertAll($csv);

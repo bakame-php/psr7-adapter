@@ -23,14 +23,13 @@ use function stream_get_wrappers;
 use function stream_wrapper_register;
 
 /**
- * StreamWrapper class to enable using a
- * PSR-7 StreamInterface with League\Csv connection object.
+ * StreamWrapper class to enable converting a StreamInterface instance into a PHP Stream
  *
  * This class is heavily based on the code found in Guzzle\Psr7 package
  *
  * @link https://github.com/guzzle/psr7/blob/master/src/StreamWrapper.php
  *
- * @internal used by stream_from to wrap the StreamInterface object
+ * @internal used by stream_from
  */
 final class StreamWrapper
 {
