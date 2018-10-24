@@ -23,9 +23,6 @@ use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\StreamInterface;
 use function Bakame\Psr7\Adapter\stream_from;
 
-/**
- * @coversDefaultClass Bakame\Psr7\Adapter\StreamWrapper
- */
 class StreamWrapperTest extends TestCase
 {
     public function testStreamWrapper()
@@ -73,15 +70,36 @@ class StreamWrapperTest extends TestCase
         self::assertTrue(fclose($rsrc));
     }
 
+    public function testUnregisterStream()
+    {
+        StreamWrapper::register();
+        self::assertTrue(in_array(StreamWrapper::PROTOCOL, stream_get_wrappers(), true));
+        StreamWrapper::unregister();
+        self::assertFalse(in_array(StreamWrapper::PROTOCOL, stream_get_wrappers(), true));
+    }
+
     public function testResourceOpeningFailed()
     {
         self::expectException(Warning::class);
-        fopen(StreamWrapper::PROTOCOL.'://stream', 'r+');
+        fopen(StreamWrapper::getStreamPath(), 'r+');
     }
 
-    /**
-     * @covers Bakame\Psr7\Adapter\stream_from
-     */
+    public function testResourceOpeningFailed2()
+    {
+        StreamWrapper::register();
+        self::expectException(Warning::class);
+        $resource = tmpfile();
+        fwrite($resource, 'foo');
+        rewind($resource);
+        $res = fopen(
+            StreamWrapper::getStreamPath(),
+            'r+',
+            false,
+            stream_context_create(['foo' => ['foo' => new Psr7Stream($resource)]])
+        );
+        self::assertInternalType('resource', $res);
+    }
+
     public function testStreamFromThrowsExceptionIfStreamInterfaceIsNotReadableAndWritable()
     {
         $stream = $this
@@ -97,9 +115,6 @@ class StreamWrapperTest extends TestCase
         stream_from($stream);
     }
 
-    /**
-     * @covers Bakame\Psr7\Adapter\stream_from
-     */
     public function testStreamFromWorksIfStreamInterfaceIsReadableOnly()
     {
         $stream = $this
@@ -113,9 +128,6 @@ class StreamWrapperTest extends TestCase
         self::assertInternalType('resource', stream_from($stream));
     }
 
-    /**
-     * @covers Bakame\Psr7\Adapter\stream_from
-     */
     public function testStreamFromWorksIfStreamInterfaceIsWritableOnly()
     {
         $stream = $this
@@ -166,5 +178,41 @@ class StreamWrapperTest extends TestCase
         ]], iterator_to_array($csv, false));
         $csv = null;
         $resource = null;
+    }
+
+    public function testUrlStat()
+    {
+        StreamWrapper::register();
+        $this->assertEquals(
+            [
+                'dev'     => 0,
+                'ino'     => 0,
+                'mode'    => 0,
+                'nlink'   => 0,
+                'uid'     => 0,
+                'gid'     => 0,
+                'rdev'    => 0,
+                'size'    => 0,
+                'atime'   => 0,
+                'mtime'   => 0,
+                'ctime'   => 0,
+                'blksize' => 0,
+                'blocks'  => 0,
+                0         => 0,
+                1         => 0,
+                2         => 0,
+                3         => 0,
+                4         => 0,
+                5         => 0,
+                6         => 0,
+                7         => 0,
+                8         => 0,
+                9         => 0,
+                10        => 0,
+                11        => 0,
+                12        => 0,
+            ],
+            stat(StreamWrapper::getStreamPath())
+        );
     }
 }
