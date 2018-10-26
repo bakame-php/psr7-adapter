@@ -22,6 +22,23 @@ use PHPUnit\Framework\Error\Warning;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\StreamInterface;
 use function Bakame\Psr7\Adapter\stream_from;
+use function defined;
+use function fclose;
+use function feof;
+use function fopen;
+use function fread;
+use function fseek;
+use function fstat;
+use function ftell;
+use function fwrite;
+use function iterator_to_array;
+use function rewind;
+use function stat;
+use function stream_context_create;
+use function stream_get_meta_data;
+use function stream_select;
+use function tmpfile;
+use const FILE_APPEND;
 
 class StreamWrapperTest extends TestCase
 {
@@ -73,9 +90,9 @@ class StreamWrapperTest extends TestCase
     public function testUnregisterStream()
     {
         StreamWrapper::register();
-        self::assertTrue(in_array(StreamWrapper::PROTOCOL, stream_get_wrappers(), true));
+        self::assertTrue(StreamWrapper::isRegistered());
         StreamWrapper::unregister();
-        self::assertFalse(in_array(StreamWrapper::PROTOCOL, stream_get_wrappers(), true));
+        self::assertFalse(StreamWrapper::isRegistered());
     }
 
     public function testResourceOpeningFailed()
@@ -115,6 +132,21 @@ class StreamWrapperTest extends TestCase
         stream_from($stream);
     }
 
+
+    public function testStreamFromWithInvalidFlagUsed()
+    {
+        $stream = $this
+            ->getMockBuilder(StreamInterface::class)
+            ->setMethods(['isReadable', 'isWritable'])
+            ->getMockForAbstractClass()
+        ;
+
+        $stream->method('isWritable')->willReturn(false);
+        $stream->method('isReadable')->willReturn(true);
+        stream_from($stream, 22);
+        self::assertInternalType('resource', stream_from($stream));
+    }
+
     public function testStreamFromWorksIfStreamInterfaceIsReadableOnly()
     {
         $stream = $this
@@ -132,13 +164,18 @@ class StreamWrapperTest extends TestCase
     {
         $stream = $this
             ->getMockBuilder(StreamInterface::class)
-            ->setMethods(['isReadable', 'isWritable'])
+            ->setMethods(['isReadable', 'isWritable', 'tell', 'eof'])
             ->getMockForAbstractClass()
         ;
 
         $stream->method('isWritable')->willReturn(true);
         $stream->method('isReadable')->willReturn(false);
-        self::assertInternalType('resource', stream_from($stream));
+        $stream->method('tell')->willReturn(0);
+        $stream->method('eof')->willReturn(false);
+
+        $rsrc = stream_from($stream, FILE_APPEND);
+        self::assertInternalType('resource', $rsrc);
+        self::assertSame('a', stream_get_meta_data($rsrc)['mode']);
     }
 
     public function testStreamCast()

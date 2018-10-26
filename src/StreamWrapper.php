@@ -17,14 +17,13 @@ declare(strict_types=1);
 namespace Bakame\Psr7\Adapter;
 
 use Psr\Http\Message\StreamInterface;
-use const FILE_APPEND;
-use const SEEK_SET;
 use function in_array;
 use function stream_context_create;
 use function stream_context_get_options;
 use function stream_get_wrappers;
 use function stream_wrapper_register;
 use function stream_wrapper_unregister;
+use const SEEK_SET;
 
 /**
  * StreamWrapper class to enable converting a StreamInterface instance into a PHP Stream.
@@ -37,6 +36,9 @@ use function stream_wrapper_unregister;
  */
 final class StreamWrapper
 {
+    /**
+     * @internal
+     */
     const PROTOCOL = 'bakame+stream';
 
     /**
@@ -61,11 +63,21 @@ final class StreamWrapper
     private $mode;
 
     /**
+     * Tell whether the class is registered as a stream wrapper.
+     *
+     * @return bool [description]
+     */
+    public static function isRegistered(): bool
+    {
+        return in_array(self::PROTOCOL, stream_get_wrappers(), true);
+    }
+
+    /**
      * Unregister the class as a stream wrapper.
      */
     public static function unregister()
     {
-        if (in_array(self::PROTOCOL, stream_get_wrappers(), true)) {
+        if (self::isRegistered()) {
             stream_wrapper_unregister(self::PROTOCOL);
         }
     }
@@ -75,7 +87,7 @@ final class StreamWrapper
      */
     public static function register()
     {
-        if (!in_array(self::PROTOCOL, stream_get_wrappers(), true)) {
+        if (!self::isRegistered()) {
             stream_wrapper_register(self::PROTOCOL, self::class);
         }
     }
@@ -96,36 +108,6 @@ final class StreamWrapper
     public static function createStreamContext(StreamInterface $stream)
     {
         return stream_context_create([StreamWrapper::PROTOCOL => ['stream' => $stream]]);
-    }
-
-    /**
-     * Convert a PSR-7 stream into a PHP stream resource.
-     *
-     * @throws Exception If the conversion can not be done
-     *
-     * @return resource
-     */
-    public static function getResource(StreamInterface $stream, int $flag = 0)
-    {
-        if (!$stream->isReadable() && !$stream->isWritable()) {
-            throw new Exception('The '.StreamInterface::class.' instance must be readable, writable or both');
-        }
-
-        $open_mode = $flag & FILE_APPEND ? 'a' : 'w';
-        if ($stream->isReadable()) {
-            $open_mode = $flag & FILE_APPEND ? 'a+' : 'r+';
-            if (!$stream->isWritable()) {
-                $open_mode = 'r';
-            }
-        }
-
-        self::register();
-        $stream = @fopen(self::getStreamPath(), $open_mode, false, self::createStreamContext($stream));
-        if (is_resource($stream)) {
-            return $stream;
-        }
-
-        throw new Exception('The '.StreamInterface::class.' instance could not be converted into a PHP stream resource');
     }
 
     /**
@@ -203,7 +185,9 @@ final class StreamWrapper
             'r'  => 33060,
             'r+' => 33206,
             'w'  => 33188,
-        ];
+            'a'  => 33188,
+            'a+' => 33188,
+       ];
 
         return [
             'dev'     => 0,

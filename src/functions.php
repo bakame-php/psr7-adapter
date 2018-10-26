@@ -18,12 +18,43 @@ namespace Bakame\Psr7\Adapter;
 
 use Psr\Http\Message\StreamInterface;
 
+use function fopen;
+use function is_resource;
+use function sprintf;
+use const FILE_APPEND;
+
 /**
  * Convert a PSR-7 stream into a PHP stream resource.
  *
- * @see StreamWrapper::getResource
+ * @throws Exception If the conversion can not be done
+ *
+ * @return resource
  */
 function stream_from(StreamInterface $stream, int $flag = 0)
 {
-    return StreamWrapper::getResource($stream, $flag);
+    static $open_mode_list = [
+        0 => [
+            '1:' => 'r',
+            ':1' => 'w',
+            '1:1' => 'r+',
+        ],
+        FILE_APPEND => [
+            '1:' => 'r',
+            ':1' => 'a',
+            '1:1' => 'a+',
+        ],
+    ];
+
+    $open_mode = $open_mode_list[$flag & FILE_APPEND][$stream->isReadable().':'.$stream->isWritable()] ?? null;
+    if (null === $open_mode) {
+        throw new Exception(sprintf('The %s instance must be readable, writable or both', StreamInterface::class));
+    }
+
+    StreamWrapper::register();
+    $stream = @fopen(StreamWrapper::getStreamPath(), $open_mode, false, StreamWrapper::createStreamContext($stream));
+    if (is_resource($stream)) {
+        return $stream;
+    }
+
+    throw new Exception(sprintf('The %s instance could not be converted into a PHP stream resource', StreamInterface::class));
 }

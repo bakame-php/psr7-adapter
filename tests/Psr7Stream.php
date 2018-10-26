@@ -18,6 +18,17 @@ namespace BakameTest\Psr7\Adapter;
 
 use Psr\Http\Message\StreamInterface;
 use RuntimeException;
+use function array_key_exists;
+use function fclose;
+use function feof;
+use function fread;
+use function fseek;
+use function fstat;
+use function ftell;
+use function fwrite;
+use function preg_match;
+use function rewind;
+use function stream_get_meta_data;
 
 /**
  * StreamInterface implementation heavily based on Diactoros Stream class.
@@ -181,7 +192,7 @@ final class Psr7Stream implements StreamInterface
         $meta = stream_get_meta_data($this->resource);
         $mode = $meta['mode'];
 
-        return strlen($mode) != strcspn('xwca+', $mode);
+        return (bool) preg_match('/[x|w|c|+]/i', $meta['mode']);
     }
 
     /**
@@ -216,8 +227,9 @@ final class Psr7Stream implements StreamInterface
         }
 
         $meta = stream_get_meta_data($this->resource);
+        $mode = $meta['mode'];
 
-        return 2 !== strcspn($meta['mode'], 'r+');
+        return (bool) preg_match('/[r|+]/i', $meta['mode']);
     }
 
     /**
