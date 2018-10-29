@@ -21,7 +21,7 @@ use League\Csv\Writer;
 use PHPUnit\Framework\Error\Warning;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\StreamInterface;
-use function Bakame\Psr7\Adapter\stream_from;
+use function Bakame\Psr7\Adapter\resource_from;
 use function defined;
 use function fclose;
 use function feof;
@@ -47,7 +47,7 @@ class StreamWrapperTest extends TestCase
         $resource = tmpfile();
         fwrite($resource, 'foo');
         rewind($resource);
-        $rsrc = stream_from(new Psr7Stream($resource));
+        $rsrc = resource_from(new Psr7Stream($resource));
         self::assertSame('foo', fread($rsrc, 3));
         self::assertSame(3, ftell($rsrc));
         self::assertSame(3, fwrite($rsrc, 'bar'));
@@ -117,7 +117,7 @@ class StreamWrapperTest extends TestCase
         self::assertInternalType('resource', $res);
     }
 
-    public function testStreamFromThrowsExceptionIfStreamInterfaceIsNotReadableAndWritable()
+    public function testResourceFromThrowsExceptionIfStreamInterfaceIsNotReadableAndWritable()
     {
         $stream = $this
             ->getMockBuilder(StreamInterface::class)
@@ -129,10 +129,10 @@ class StreamWrapperTest extends TestCase
         $stream->method('isReadable')->willReturn(false);
 
         self::expectException(Exception::class);
-        stream_from($stream);
+        resource_from($stream);
     }
 
-    public function testStreamFromWithInvalidFlagUsed()
+    public function testResourceFromWithInvalidFlagUsed()
     {
         $stream = $this
             ->getMockBuilder(StreamInterface::class)
@@ -142,11 +142,11 @@ class StreamWrapperTest extends TestCase
 
         $stream->method('isWritable')->willReturn(false);
         $stream->method('isReadable')->willReturn(true);
-        stream_from($stream, 22);
-        self::assertInternalType('resource', stream_from($stream));
+        resource_from($stream, 22);
+        self::assertInternalType('resource', resource_from($stream));
     }
 
-    public function testStreamFromWorksIfStreamInterfaceIsReadableOnly()
+    public function testResourceFromWorksIfStreamInterfaceIsReadableOnly()
     {
         $stream = $this
             ->getMockBuilder(StreamInterface::class)
@@ -156,10 +156,10 @@ class StreamWrapperTest extends TestCase
 
         $stream->method('isWritable')->willReturn(false);
         $stream->method('isReadable')->willReturn(true);
-        self::assertInternalType('resource', stream_from($stream));
+        self::assertInternalType('resource', resource_from($stream));
     }
 
-    public function testStreamFromWorksIfStreamInterfaceIsWritableOnly()
+    public function testResourceFromWorksIfStreamInterfaceIsWritableOnly()
     {
         $stream = $this
             ->getMockBuilder(StreamInterface::class)
@@ -172,7 +172,7 @@ class StreamWrapperTest extends TestCase
         $stream->method('tell')->willReturn(0);
         $stream->method('eof')->willReturn(false);
 
-        $rsrc = stream_from($stream, FILE_APPEND);
+        $rsrc = resource_from($stream, FILE_APPEND);
         self::assertInternalType('resource', $rsrc);
         self::assertSame('a', stream_get_meta_data($rsrc)['mode']);
     }
@@ -180,8 +180,8 @@ class StreamWrapperTest extends TestCase
     public function testStreamCast()
     {
         $streams = [
-            stream_from(new Psr7Stream(tmpfile())),
-            stream_from(new Psr7Stream(tmpfile())),
+            resource_from(new Psr7Stream(tmpfile())),
+            resource_from(new Psr7Stream(tmpfile())),
         ];
         $write = null;
         $except = null;
@@ -191,7 +191,7 @@ class StreamWrapperTest extends TestCase
     public function testLeagueCsvWriter()
     {
         $resource = tmpfile();
-        $csv = Writer::createFromStream(stream_from(new Psr7Stream($resource)));
+        $csv = Writer::createFromStream(resource_from(new Psr7Stream($resource)));
         self::assertSame("\n", $csv->getNewline());
         $csv->setNewline("\r\n");
         $csv->insertOne(['jane', 'doe']);
@@ -205,7 +205,7 @@ class StreamWrapperTest extends TestCase
         $resource = tmpfile();
         fwrite($resource, 'name,surname,email'."\n".'foo,bar,baz');
         rewind($resource);
-        $csv = Reader::createFromStream(stream_from(new Psr7Stream($resource)));
+        $csv = Reader::createFromStream(resource_from(new Psr7Stream($resource)));
         $csv->setHeaderOffset(0);
         self::assertSame([[
             'name' => 'foo',

@@ -14,6 +14,6 @@
 
 declare(strict_types=1);
 
-if (!function_exists('\Bakame\Psr7\Adapter\stream_from')) {
+if (!function_exists('\Bakame\Psr7\Adapter\resource_from')) {
     require __DIR__.'/functions.php';
 }

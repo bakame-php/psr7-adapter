@@ -23,15 +23,15 @@ $ composer require bakame/psr7-adapter
 Documentation
 ------
 
-### stream_from
+### resource_from
 
 ```php
 <?php
 
 use Psr\Http\Message\StreamInterface;
-use function Bakame\Psr7\Adapter\stream_from;
+use function Bakame\Psr7\Adapter\resource_from;
 
-function stream_from(StreamInterface $stream, int $flag = 0): resource;
+function resource_from(StreamInterface $stream, int $flag = 0): resource;
 ```
 
 returns a PHP stream resource from a PSR-7 `StreamInterface` object.
@@ -65,14 +65,14 @@ use League\Csv\Writer;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
 use Slim\App;
-use function Bakame\Psr7\Adapter\stream_from;
+use function Bakame\Psr7\Adapter\resource_from;
 
 $app = new App();
 $app->post('/csv-delimiter-converter', function (Request $request, Response $response): Response {
 
     //let's create a CSV Reader object from the submitted file
     $input_csv = $request->getUploadedFiles()['csv'];
-    $csv = Reader::createFromStream(stream_from($input_csv->getStream()));
+    $csv = Reader::createFromStream(resource_from($input_csv->getStream()));
     $csv->setDelimiter(';');
 
     $flag = 0;
@@ -83,7 +83,7 @@ $app->post('/csv-delimiter-converter', function (Request $request, Response $res
     }
 
     //let's create a CSV Writer object from the response body
-    $output = Writer::createFromStream(stream_from($psr7stream, $flag));
+    $output = Writer::createFromStream(resource_from($psr7stream, $flag));
     //we convert the delimiter from ";" to "|"
     $output->setDelimiter('|');
     $output->insertAll($csv);
@@ -100,7 +100,7 @@ $app->post('/csv-delimiter-converter', function (Request $request, Response $res
 $app->run();
 ```
 
-In both cases, the `StreamInterface` objects are never detached or removed from their parent objects (ie the `Request` object or the `Response` object), the CSV objects operate on their `StreamInterface` property using the adapter stream returned by `stream_from`.
+In both cases, the `StreamInterface` objects are never detached or removed from their parent objects (ie the `Request` object or the `Response` object), the CSV objects operate on their `StreamInterface` property using the adapter stream returned by `resource_from`.
 
 Testing
 -------

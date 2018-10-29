@@ -30,7 +30,7 @@ use const FILE_APPEND;
  *
  * @return resource
  */
-function stream_from(StreamInterface $stream, int $flag = 0)
+function resource_from(StreamInterface $stream, int $flag = 0)
 {
     static $open_mode_list = [
         0 => [
