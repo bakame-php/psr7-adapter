@@ -18,14 +18,12 @@ use Bakame\Psr7\Adapter\Exception;
 use Bakame\Psr7\Adapter\StreamWrapper;
 use League\Csv\Reader;
 use League\Csv\Writer;
-use PHPUnit\Framework\Error\Warning;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\StreamInterface;
 use function Bakame\Psr7\Adapter\resource_from;
 use function defined;
 use function fclose;
 use function feof;
-use function fopen;
 use function fread;
 use function fseek;
 use function fstat;
@@ -89,32 +87,18 @@ class StreamWrapperTest extends TestCase
 
     public function testUnregisterStream()
     {
-        StreamWrapper::register();
+        self::assertTrue(StreamWrapper::register());
         self::assertTrue(StreamWrapper::isRegistered());
-        StreamWrapper::unregister();
+        self::assertTrue(StreamWrapper::unregister());
         self::assertFalse(StreamWrapper::isRegistered());
+        self::assertTrue(StreamWrapper::unregister());
     }
 
-    public function testResourceOpeningFailed()
+    public function testStreamOpenReturnsFalse()
     {
-        self::expectException(Warning::class);
-        fopen(StreamWrapper::getStreamPath(), 'r+');
-    }
-
-    public function testResourceOpeningFailed2()
-    {
-        StreamWrapper::register();
-        self::expectException(Warning::class);
-        $resource = tmpfile();
-        fwrite($resource, 'foo');
-        rewind($resource);
-        $res = fopen(
-            StreamWrapper::getStreamPath(),
-            'r+',
-            false,
-            stream_context_create(['foo' => ['foo' => new Psr7Stream($resource)]])
-        );
-        self::assertInternalType('resource', $res);
+        $stream = new StreamWrapper();
+        $stream->context = stream_context_create(['foo' => ['foo' => new Psr7Stream(tmpfile())]]);
+        self::assertFalse($stream->stream_open('path', 'r', 1));
     }
 
     public function testResourceFromThrowsExceptionIfStreamInterfaceIsNotReadableAndWritable()
@@ -218,6 +202,8 @@ class StreamWrapperTest extends TestCase
 
     public function testUrlStat()
     {
+        $rsrc = resource_from(new Psr7Stream(tmpfile()));
+
         StreamWrapper::register();
         $this->assertEquals(
             [
@@ -248,7 +234,7 @@ class StreamWrapperTest extends TestCase
                 11        => 0,
                 12        => 0,
             ],
-            stat(StreamWrapper::getStreamPath())
+            stat(stream_get_meta_data($rsrc)['uri'])
         );
     }
 }

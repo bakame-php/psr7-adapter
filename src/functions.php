@@ -18,7 +18,6 @@ namespace Bakame\Psr7\Adapter;
 
 use Psr\Http\Message\StreamInterface;
 
-use function fopen;
 use function is_resource;
 use function sprintf;
 use const FILE_APPEND;
@@ -50,10 +49,9 @@ function resource_from(StreamInterface $stream, int $flag = 0)
         throw new Exception(sprintf('The %s instance must be readable, writable or both', StreamInterface::class));
     }
 
-    StreamWrapper::register();
-    $stream = @fopen(StreamWrapper::getStreamPath(), $open_mode, false, StreamWrapper::createStreamContext($stream));
-    if (is_resource($stream)) {
-        return $stream;
+    $rsrc = StreamWrapper::getResource($stream, $open_mode);
+    if (is_resource($rsrc)) {
+        return $rsrc;
     }
 
     throw new Exception(sprintf('The %s instance could not be converted into a PHP stream resource', StreamInterface::class));

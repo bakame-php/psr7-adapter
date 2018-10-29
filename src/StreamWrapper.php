@@ -32,7 +32,7 @@ use const SEEK_SET;
  *
  * @link https://github.com/guzzle/psr7/blob/master/src/StreamWrapper.php
  *
- * @internal used by stream_from
+ * @internal used by resource_from
  */
 final class StreamWrapper
 {
@@ -64,8 +64,6 @@ final class StreamWrapper
 
     /**
      * Tell whether the class is registered as a stream wrapper.
-     *
-     * @return bool [description]
      */
     public static function isRegistered(): bool
     {
@@ -75,39 +73,39 @@ final class StreamWrapper
     /**
      * Unregister the class as a stream wrapper.
      */
-    public static function unregister()
+    public static function unregister(): bool
     {
-        if (self::isRegistered()) {
-            stream_wrapper_unregister(self::PROTOCOL);
+        if (!self::isRegistered()) {
+            return true;
         }
+
+        return stream_wrapper_unregister(self::PROTOCOL);
     }
 
     /**
      * Register the class as a stream wrapper.
      */
-    public static function register()
+    public static function register(): bool
     {
-        if (!self::isRegistered()) {
-            stream_wrapper_register(self::PROTOCOL, self::class);
+        if (self::isRegistered()) {
+            return true;
         }
+
+        return stream_wrapper_register(self::PROTOCOL, self::class);
     }
 
     /**
-     * Returns the standard path used by the stream.
-     */
-    public static function getStreamPath(): string
-    {
-        return StreamWrapper::PROTOCOL.'://stream';
-    }
-
-    /**
-     * Returns the context created for the given stream object.
+     * Returns a PHP stream resource from a PSR-7 StreamInterface object.
      *
-     * @return resource
+     * @return resource|false
      */
-    public static function createStreamContext(StreamInterface $stream)
+    public static function getResource(StreamInterface $stream, string $open_mode)
     {
-        return stream_context_create([StreamWrapper::PROTOCOL => ['stream' => $stream]]);
+        self::register();
+
+        return @fopen(self::PROTOCOL.'://stream', $open_mode, false, stream_context_create([
+            self::PROTOCOL => ['stream' => $stream],
+        ]));
     }
 
     /**
@@ -116,7 +114,6 @@ final class StreamWrapper
     public function stream_open(string $path, string $mode, int $options, string &$opened_path = null): bool
     {
         $options = stream_context_get_options($this->context);
-
         if (!isset($options[self::PROTOCOL]['stream'])) {
             return false;
         }
