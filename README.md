@@ -3,6 +3,8 @@ Bakame PSR-7 Adapter
 
 This package enables converting a [PSR-7 StreamInterface objects](//www.php-fig.org/psr/psr-7/) into a PHP stream. This make it possible to work with functions and class which expect a PHP stream resource like [League CSV object](//csv.thephpleague.com) package.
 
+The included `StreamWrapper` class is heavily inspired/copied from the excellent [Guzzle/Psr7](https://github.com/guzzle/psr7#php-streamwrapper) package written by Michael Dowling which uses the [MIT License](https://github.com/guzzle/psr7/blob/master/LICENSE)
+
 Requirements
 -------
 
@@ -18,7 +20,39 @@ Install `bakame/psr7-adapter` using Composer.
 $ composer require bakame/psr7-adapter
 ```
 
-Usage
+Documentation
+------
+
+### stream_from
+
+```php
+<?php
+
+use Psr\Http\Message\StreamInterface;
+use function Bakame\Psr7\Adapter\stream_from;
+
+function stream_from(StreamInterface $stream, int $flag = 0): resource;
+```
+
+returns a PHP stream resource from a PSR-7 `StreamInterface` object.
+
+#### Parameters
+
+- `$stream` : a object implementing PSR-7 `StreamInterface` interface.
+- `$flag` : `FILE_APPEND` flag from `file_put_contents`
+
+#### Returned values
+
+A PHP stream resource
+
+#### Exception
+
+A `Bakame\Psr7\Adapter\Exception` will be triggered when the following situations are encountered:
+
+- If the `StreamInterface` is not readable and writable
+- If the stream resource could not be created.
+
+Usage example
 ------
 
 Here's a simple usage with `League\Csv` and `Slim\Framework`.
@@ -67,35 +101,6 @@ $app->run();
 ```
 
 In both cases, the `StreamInterface` objects are never detached or removed from their parent objects (ie the `Request` object or the `Response` object), the CSV objects operate on their `StreamInterface` property using the adapter stream returned by `stream_from`.
-
-### stream_from
-
-```php
-<?php
-
-use Psr\Http\Message\StreamInterface;
-use function Bakame\Psr7\Adapter\stream_from;
-
-function stream_from(StreamInterface $stream, int $flag = 0): resource;
-```
-
-returns a PHP stream resource from a PSR-7 `StreamInterface` object.
-
-#### Parameters
-
-- `$stream` : a object implementing PSR-7 `StreamInterface` interface.
-- `$flag` : `FILE_APPEND` flag from `file_put_contents`
-
-#### Returned values
-
-A PHP stream resource
-
-#### Exception
-
-A `Bakame\Psr7\Adapter\Exception` will be triggered when the following situations are encountered:
-
-- If the `StreamInterface` is not readable and writable
-- If the stream resource could not be created.
 
 Testing
 -------

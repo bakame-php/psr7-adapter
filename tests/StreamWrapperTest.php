@@ -132,7 +132,6 @@ class StreamWrapperTest extends TestCase
         stream_from($stream);
     }
 
-
     public function testStreamFromWithInvalidFlagUsed()
     {
         $stream = $this
