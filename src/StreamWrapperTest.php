@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Bakame PSR-7 Stream Adapter package.
+ * Bakame PSR-7 Stream Adapter package
  *
  * @author Ignace Nyamagana Butera <nyamsprod@gmail.com>
  * @license http://opensource.org/licenses/MIT
@@ -12,15 +12,13 @@
  * file that was distributed with this source code.
  */
 
-namespace BakameTest\Psr7\Adapter;
+namespace Bakame\Psr7\Adapter;
 
-use Bakame\Psr7\Adapter\Exception;
-use Bakame\Psr7\Adapter\StreamWrapper;
 use League\Csv\Reader;
 use League\Csv\Writer;
+use Nyholm\Psr7\Stream;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\StreamInterface;
-use function Bakame\Psr7\Adapter\resource_from;
 use function defined;
 use function fclose;
 use function feof;
@@ -36,23 +34,36 @@ use function stream_context_create;
 use function stream_get_meta_data;
 use function stream_select;
 use function tmpfile;
-use const FILE_APPEND;
 
-class StreamWrapperTest extends TestCase
+final class StreamWrapperTest extends TestCase
 {
-    public function testStreamWrapper()
+    /** @var resource $resource */
+    private $resource;
+
+    protected function setUp(): void
     {
+        /** @var resource $resource */
         $resource = tmpfile();
-        fwrite($resource, 'foo');
-        rewind($resource);
-        $rsrc = resource_from(new Psr7Stream($resource));
-        self::assertSame('foo', fread($rsrc, 3));
-        self::assertSame(3, ftell($rsrc));
-        self::assertSame(3, fwrite($rsrc, 'bar'));
-        self::assertSame(0, fseek($rsrc, 0));
-        self::assertSame('foobar', fread($rsrc, 6));
-        self::assertSame('', fread($rsrc, 1));
-        self::assertTrue(feof($rsrc));
+        $this->resource = $resource;
+    }
+
+    protected function tearDown(): void
+    {
+        unset($this->resource);
+    }
+
+    public function testStreamWrapper(): void
+    {
+        fwrite($this->resource, 'foo');
+        rewind($this->resource);
+        $resource = StreamWrapper::streamToResource(Stream::create($this->resource));
+        self::assertSame('foo', fread($resource, 3));
+        self::assertSame(3, ftell($resource));
+        self::assertSame(3, fwrite($resource, 'bar'));
+        self::assertSame(0, fseek($resource, 0));
+        self::assertSame('foobar', fread($resource, 6));
+        self::assertSame('', fread($resource, 1));
+        self::assertTrue(feof($resource));
         $stBlksize  = defined('PHP_WINDOWS_VERSION_BUILD') ? -1 : 0;
         self::assertEquals([
             'dev'     => 0,
@@ -81,11 +92,11 @@ class StreamWrapperTest extends TestCase
             10        => 0,
             11        => $stBlksize,
             12        => $stBlksize,
-        ], fstat($rsrc));
-        self::assertTrue(fclose($rsrc));
+        ], fstat($resource));
+        self::assertTrue(fclose($resource));
     }
 
-    public function testUnregisterStream()
+    public function testUnregisterStream(): void
     {
         self::assertTrue(StreamWrapper::register());
         self::assertTrue(StreamWrapper::isRegistered());
@@ -94,60 +105,84 @@ class StreamWrapperTest extends TestCase
         self::assertTrue(StreamWrapper::unregister());
     }
 
-    public function testStreamOpenReturnsFalse()
+    public function testStreamOpenReturnsFalse(): void
     {
         $stream = new StreamWrapper();
-        $stream->context = stream_context_create(['foo' => ['foo' => new Psr7Stream(tmpfile())]]);
+        $stream->context = stream_context_create(['foo' => ['foo' => Stream::create($this->resource)]]);
         self::assertFalse($stream->stream_open('path', 'r', 1));
     }
 
-    public function testResourceFromThrowsExceptionIfStreamInterfaceIsNotReadableAndWritable()
+    public function testItThrowsExceptionOnAppendableStreamIfStreamInterfaceIsNotReadableAndWritable(): void
     {
         $stream = $this
             ->getMockBuilder(StreamInterface::class)
-            ->setMethods(['isReadable', 'isWritable'])
+            ->onlyMethods(['isReadable', 'isWritable'])
             ->getMockForAbstractClass()
         ;
 
         $stream->method('isWritable')->willReturn(false);
         $stream->method('isReadable')->willReturn(false);
 
-        self::expectException(Exception::class);
-        resource_from($stream);
+        $this->expectException(UnableToWrapStream::class);
+        StreamWrapper::streamToAppendableResource($stream);
     }
 
-    public function testResourceFromWithInvalidFlagUsed()
+    public function testItThrowsExceptionIfStreamInterfaceIsNotReadableAndWritable(): void
     {
         $stream = $this
             ->getMockBuilder(StreamInterface::class)
-            ->setMethods(['isReadable', 'isWritable'])
+            ->onlyMethods(['isReadable', 'isWritable'])
+            ->getMockForAbstractClass()
+        ;
+
+        $stream->method('isWritable')->willReturn(false);
+        $stream->method('isReadable')->willReturn(false);
+
+        $this->expectException(UnableToWrapStream::class);
+        StreamWrapper::streamToResource($stream);
+    }
+
+    public function testItThrowsWithInvalidFlagUsed(): void
+    {
+        $stream = $this
+            ->getMockBuilder(StreamInterface::class)
+            ->onlyMethods(['isReadable', 'isWritable', 'tell', 'eof'])
             ->getMockForAbstractClass()
         ;
 
         $stream->method('isWritable')->willReturn(false);
         $stream->method('isReadable')->willReturn(true);
-        resource_from($stream, 22);
-        self::assertInternalType('resource', resource_from($stream));
+        $stream->method('tell')->willReturn(0);
+        $stream->method('eof')->willReturn(false);
+
+        $resource = StreamWrapper::streamToAppendableResource($stream);
+
+        self::assertSame('r', stream_get_meta_data($resource)['mode']);
     }
 
-    public function testResourceFromWorksIfStreamInterfaceIsReadableOnly()
+    public function testResourceFromWorksIfStreamInterfaceIsReadableOnly(): void
     {
         $stream = $this
             ->getMockBuilder(StreamInterface::class)
-            ->setMethods(['isReadable', 'isWritable'])
+            ->onlyMethods(['isReadable', 'isWritable', 'tell', 'eof'])
             ->getMockForAbstractClass()
         ;
 
         $stream->method('isWritable')->willReturn(false);
         $stream->method('isReadable')->willReturn(true);
-        self::assertInternalType('resource', resource_from($stream));
+        $stream->method('tell')->willReturn(0);
+        $stream->method('eof')->willReturn(false);
+
+        $resource = StreamWrapper::streamToAppendableResource($stream);
+
+        self::assertSame('r', stream_get_meta_data($resource)['mode']);
     }
 
-    public function testResourceFromWorksIfStreamInterfaceIsWritableOnly()
+    public function testResourceFromWorksIfStreamInterfaceIsWritableOnly(): void
     {
         $stream = $this
             ->getMockBuilder(StreamInterface::class)
-            ->setMethods(['isReadable', 'isWritable', 'tell', 'eof'])
+            ->onlyMethods(['isReadable', 'isWritable', 'tell', 'eof'])
             ->getMockForAbstractClass()
         ;
 
@@ -156,40 +191,39 @@ class StreamWrapperTest extends TestCase
         $stream->method('tell')->willReturn(0);
         $stream->method('eof')->willReturn(false);
 
-        $rsrc = resource_from($stream, FILE_APPEND);
-        self::assertInternalType('resource', $rsrc);
+        $rsrc = StreamWrapper::streamToAppendableResource($stream);
+
         self::assertSame('a', stream_get_meta_data($rsrc)['mode']);
     }
 
-    public function testStreamCast()
+    public function testStreamCast(): void
     {
+        /** @var resource $resource */
+        $resource = tmpfile();
         $streams = [
-            resource_from(new Psr7Stream(tmpfile())),
-            resource_from(new Psr7Stream(tmpfile())),
+            StreamWrapper::streamToResource(Stream::create($this->resource)),
+            StreamWrapper::streamToResource(Stream::create($resource)),
         ];
         $write = null;
         $except = null;
-        self::assertInternalType('integer', stream_select($streams, $write, $except, 0));
+        self::assertIsInt(stream_select($streams, $write, $except, 0));
     }
 
-    public function testLeagueCsvWriter()
+    public function testLeagueCsvWriter(): void
     {
-        $resource = tmpfile();
-        $csv = Writer::createFromStream(resource_from(new Psr7Stream($resource)));
+        $csv = Writer::createFromStream(StreamWrapper::streamToResource(Stream::create($this->resource)));
         self::assertSame("\n", $csv->getNewline());
         $csv->setNewline("\r\n");
         $csv->insertOne(['jane', 'doe']);
-        self::assertSame("jane,doe\r\n", $csv->getContent());
+        self::assertSame("jane,doe\r\n", $csv->toString());
         $csv = null;
-        $resource = null;
     }
 
-    public function testLeagueCsvReader()
+    public function testLeagueCsvReader(): void
     {
-        $resource = tmpfile();
-        fwrite($resource, 'name,surname,email'."\n".'foo,bar,baz');
-        rewind($resource);
-        $csv = Reader::createFromStream(resource_from(new Psr7Stream($resource)));
+        fwrite($this->resource, 'name,surname,email'."\n".'foo,bar,baz');
+        rewind($this->resource);
+        $csv = Reader::createFromStream(StreamWrapper::streamToResource(Stream::create($this->resource)));
         $csv->setHeaderOffset(0);
         self::assertSame([[
             'name' => 'foo',
@@ -197,15 +231,14 @@ class StreamWrapperTest extends TestCase
             'email' => 'baz',
         ]], iterator_to_array($csv, false));
         $csv = null;
-        $resource = null;
     }
 
-    public function testUrlStat()
+    public function testUrlStat(): void
     {
-        $rsrc = resource_from(new Psr7Stream(tmpfile()));
+        $resource = StreamWrapper::streamToResource(Stream::create($this->resource));
 
         StreamWrapper::register();
-        $this->assertEquals(
+        self::assertEquals(
             [
                 'dev'     => 0,
                 'ino'     => 0,
@@ -234,7 +267,7 @@ class StreamWrapperTest extends TestCase
                 11        => 0,
                 12        => 0,
             ],
-            stat(stream_get_meta_data($rsrc)['uri'])
+            stat(stream_get_meta_data($resource)['uri'])
         );
     }
 }

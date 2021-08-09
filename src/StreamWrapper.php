@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Bakame PSR-7 Stream Adapter package.
+ * Bakame PSR-7 Stream Adapter package
  *
  * @author Ignace Nyamagana Butera <nyamsprod@gmail.com>
  * @license http://opensource.org/licenses/MIT
@@ -23,6 +23,7 @@ use function stream_context_get_options;
 use function stream_get_wrappers;
 use function stream_wrapper_register;
 use function stream_wrapper_unregister;
+use const FILE_APPEND;
 use const SEEK_SET;
 
 /**
@@ -31,35 +32,31 @@ use const SEEK_SET;
  * This class is heavily based on the code found in Guzzle\Psr7 package
  *
  * @link https://github.com/guzzle/psr7/blob/master/src/StreamWrapper.php
- *
- * @internal used by resource_from
  */
 final class StreamWrapper
 {
-    /**
-     * @internal
-     */
-    const PROTOCOL = 'bakame+stream';
+    private const PROTOCOL = 'bakame+stream';
 
-    /**
-     * The resource context.
-     *
-     * @var resource
-     */
+    private const AVAILABLE_OPEN_MODES = [
+        0 => [
+            '1:' => 'r',
+            ':1' => 'w',
+            '1:1' => 'r+',
+        ],
+        FILE_APPEND => [
+            '1:' => 'r',
+            ':1' => 'a',
+            '1:1' => 'a+',
+        ],
+    ];
+
+    /** @var resource */
     public $context;
 
-    /**
-     * The PSR-7 Stream.
-     *
-     * @var StreamInterface
-     */
+    /** @var StreamInterface */
     private $stream;
 
-    /**
-     * Resource open mode.
-     *
-     * @var string
-     */
+    /** @var string */
     private $mode;
 
     /**
@@ -95,22 +92,69 @@ final class StreamWrapper
     }
 
     /**
-     * Returns a PHP stream resource from a PSR-7 StreamInterface object.
+     * Wraps a PSR-7 stream into a PHP stream resource.
      *
-     * @return resource|false
+     * @throws UnableToWrapStream If wrapping fails or can not be done
+     * @return resource
      */
-    public static function getResource(StreamInterface $stream, string $open_mode)
+    public static function streamToResource(StreamInterface $stream)
     {
-        self::register();
+        $openMode = self::AVAILABLE_OPEN_MODES[0][$stream->isReadable().':'.$stream->isWritable()] ?? null;
+        if (null === $openMode) {
+            throw UnableToWrapStream::dueToStreamPermission();
+        }
 
-        return @fopen(self::PROTOCOL.'://stream', $open_mode, false, stream_context_create([
-            self::PROTOCOL => ['stream' => $stream],
-        ]));
+        return StreamWrapper::toResource($stream, $openMode);
     }
 
     /**
-     * {@inheritdoc}
+     * Wraps a PSR-7 stream into a PHP stream resource.
+     *
+     * @throws UnableToWrapStream If wrapping fails or can not be done
+     * @return resource
      */
+    public static function streamToAppendableResource(StreamInterface $stream)
+    {
+        $openMode = self::AVAILABLE_OPEN_MODES[FILE_APPEND][$stream->isReadable().':'.$stream->isWritable()] ?? null;
+        if (null === $openMode) {
+            throw UnableToWrapStream::dueToStreamPermission();
+        }
+
+        return StreamWrapper::toResource($stream, $openMode);
+    }
+
+
+    /**
+     * Returns a PHP stream resource from a PSR-7 StreamInterface object.
+     *
+     * @throws UnableToWrapStream If conversion fails
+     *
+     * @return resource
+     */
+    private static function toResource(StreamInterface $stream, string $openMode)
+    {
+        self::register();
+        /** @var int|null $error */
+        $error = null;
+        set_error_handler(function (int $errno, string $errstr, string $errfile, int $errline) use (&$error): bool {
+            if (E_WARNING === $errno) {
+                $error = $errno;
+            }
+
+            return false;
+        });
+
+        $resource = fopen(self::PROTOCOL.'://stream', $openMode, false, stream_context_create([self::PROTOCOL => ['stream' => $stream]]));
+
+        restore_error_handler();
+
+        if (false === $resource || null !== $error) {
+            throw UnableToWrapStream::dueToUnsupportedStream();
+        }
+
+        return $resource;
+    }
+
     public function stream_open(string $path, string $mode, int $options, string &$opened_path = null): bool
     {
         $options = stream_context_get_options($this->context);
@@ -124,41 +168,26 @@ final class StreamWrapper
         return true;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function stream_read(int $count): string
     {
         return $this->stream->read($count);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function stream_write(string $data): int
     {
         return $this->stream->write($data);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function stream_tell(): int
     {
         return $this->stream->tell();
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function stream_eof(): bool
     {
         return $this->stream->eof();
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function stream_seek(int $offset, int $whence = SEEK_SET): bool
     {
         $this->stream->seek($offset, $whence);
@@ -166,6 +195,9 @@ final class StreamWrapper
         return true;
     }
 
+    /**
+     * @return resource|null
+     */
     public function stream_cast(int $cast_as)
     {
         $stream = clone $this->stream;
@@ -174,7 +206,7 @@ final class StreamWrapper
     }
 
     /**
-     * {@inheritdoc}
+     * @return array<string, int>
      */
     public function stream_stat(): array
     {
@@ -194,7 +226,7 @@ final class StreamWrapper
             'uid'     => 0,
             'gid'     => 0,
             'rdev'    => 0,
-            'size'    => $this->stream->getSize() ?: 0,
+            'size'    => $this->stream->getSize() ?? 0,
             'atime'   => 0,
             'mtime'   => 0,
             'ctime'   => 0,
@@ -204,7 +236,7 @@ final class StreamWrapper
     }
 
     /**
-     * {@inheritdoc}
+     * @return array<string, int>
      */
     public function url_stat(string $path, int $flags): array
     {

@@ -8,7 +8,7 @@ The included `StreamWrapper` class is heavily inspired/copied from the excellent
 Requirements
 -------
 
-You need **PHP >= 7.0** but the latest stable version of PHP is recommended.
+You need **PHP >= 7.3** but the latest stable version of PHP is recommended.
 - A [PSR-7](//packagist.org/providers/psr/http-message-implementation) http mesage implementation ([Diactoros](//github.com/zendframework/zend-diactoros), [Guzzle](//github.com/guzzle/psr7), [Slim](//github.com/slimphp/Slim), etc...)
 
 Installation
@@ -23,15 +23,17 @@ $ composer require bakame/psr7-adapter
 Documentation
 ------
 
-### resource_from
+### StreamWrapper::streamToResource
+### StreamWrapper::streamToAppendableResource
 
 ```php
 <?php
 
 use Psr\Http\Message\StreamInterface;
-use function Bakame\Psr7\Adapter\resource_from;
+use Bakame\Psr7\Adapter\StreamWrapper;
 
-function resource_from(StreamInterface $stream, int $flag = 0): resource;
+public static StreamWrapper::streamToResource(StreamInterface $stream): resource;
+public static StreamWrapper::streamToAppendableResource(StreamInterface $stream): resource;
 ```
 
 returns a PHP stream resource from a PSR-7 `StreamInterface` object.
@@ -39,7 +41,6 @@ returns a PHP stream resource from a PSR-7 `StreamInterface` object.
 #### Parameters
 
 - `$stream` : a object implementing PSR-7 `StreamInterface` interface.
-- `$flag` : `FILE_APPEND` flag from `file_put_contents`
 
 #### Returned values
 
@@ -47,7 +48,7 @@ A PHP stream resource
 
 #### Exception
 
-A `Bakame\Psr7\Adapter\Exception` will be triggered when the following situations are encountered:
+A `Bakame\Psr7\Adapter\UnableToWrapStream` will be triggered when the following situations are encountered:
 
 - If the `StreamInterface` is not readable and writable
 - If the stream resource could not be created.
@@ -55,49 +56,55 @@ A `Bakame\Psr7\Adapter\Exception` will be triggered when the following situation
 Usage example
 ------
 
-Here's a simple usage with `League\Csv` and `Slim\Framework`.
+Here's a simple usage with `League\Csv`.
 
 ```php
 <?php
 
+use Bakame\Psr7\Adapter\StreamWrapper;
 use League\Csv\Reader;
 use League\Csv\Writer;
-use Psr\Http\Message\ServerRequestInterface as Request;
-use Psr\Http\Message\ResponseInterface as Response;
-use Slim\App;
-use function Bakame\Psr7\Adapter\resource_from;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\ResponseInterface;
 
-$app = new App();
-$app->post('/csv-delimiter-converter', function (Request $request, Response $response): Response {
-
-    //let's create a CSV Reader object from the submitted file
-    $input_csv = $request->getUploadedFiles()['csv'];
-    $csv = Reader::createFromStream(resource_from($input_csv->getStream()));
-    $csv->setDelimiter(';');
-
-    $flag = 0;
-    $psr7stream = $response->getBody();
-    if ('' !== $csv->getInputBOM()) {
-        $flag = FILE_APPEND;
-        $psr7stream->write($csv->getInputBOM());
+final class CsvDelimiterSwitcherAction
+{
+    public function __construct(
+        private string $inputDelimiter,
+        private string $outputDelimiter
+    ) {
     }
 
-    //let's create a CSV Writer object from the response body
-    $output = Writer::createFromStream(resource_from($psr7stream, $flag));
-    //we convert the delimiter from ";" to "|"
-    $output->setDelimiter('|');
-    $output->insertAll($csv);
-
-    //we add CSV header to enable downloading the converter document
-    return $response
-        ->withHeader('Content-Type', 'text/csv, charset=utf-8')
-        ->withHeader('Content-Transfer-Encoding', 'binary')
-        ->withHeader('Content-Description', 'File Transfer')
-        ->withHeader('Content-Disposition', 'filename=csv-'.date_create()->format('Ymdhis').'.csv')
-    ;
-});
-
-$app->run();
+    public function __invoke(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        //let's create a CSV Reader object from the submitted file
+        $inputCsv = $request->getUploadedFiles()['csv'];
+        $reader = Reader::createFromStream(
+            StreamWrapper::streamToResource($inputCsv->getStream())
+        );
+        $reader->setDelimiter($inputDelimiter);
+        
+        $psr7stream = $response->getBody();
+        $psr7stream->write($reader->getInputBOM());
+    
+        //let's create a CSV Writer object from the response body
+        //because we already wrote to the stream we need to have an appendable resource 
+        $writer = Writer::createFromStream(
+            StreamWrapper::streamToAppendableResource($psr7stream);
+        );
+        //we convert the delimiter
+        $writer->setDelimiter($outputDelimiter);
+        $writer->insertAll($reader);
+    
+        //we add CSV header to enable downloading the converter document
+        return $response
+            ->withHeader('Content-Type', 'text/csv, charset=utf-8')
+            ->withHeader('Content-Transfer-Encoding', 'binary')
+            ->withHeader('Content-Description', 'File Transfer')
+            ->withHeader('Content-Disposition', 'filename=csv-'.(new DateTimeImmutable())->format('Ymdhis').'.csv')
+        ;
+    }
+}
 ```
 
 In both cases, the `StreamInterface` objects are never detached or removed from their parent objects (ie the `Request` object or the `Response` object), the CSV objects operate on their `StreamInterface` property using the adapter stream returned by `resource_from`.
@@ -105,7 +112,13 @@ In both cases, the `StreamInterface` objects are never detached or removed from 
 Testing
 -------
 
-A [PHPUnit](https://phpunit.de) test suite and a coding style compliance test suite using [PHP CS Fixer](http://cs.sensiolabs.org/) are avaiable. To run the tests, run the following command from the project folder.
+The package has:
+
+- a [PHPUnit](https://phpunit.de) test suite
+- a coding style compliance test suite using [PHP CS Fixer](https://cs.symfony.com/).
+- a code analysis compliance test suite using [PHPStan](https://github.com/phpstan/phpstan).
+
+To run the tests, run the following command from the project folder.
 
 ``` bash
 $ composer test
